@@ -1,0 +1,12 @@
+fastapi==0.115.6
+uvicorn==0.32.1
+python-dotenv==1.0.1
+pydantic==2.10.4
+gTTS==2.5.4
+requests==2.32.3
+# ── Add these when upgrading to Coqui ──
+# TTS==0.22.0       # Coqui XTTS-v2 (needs GPU for fast inference)
+# torch==2.2.0      # PyTorch backend for Coqui
+# ── Add these for the job queue ──
+# redis==5.0.1
+# rq==1.16.0

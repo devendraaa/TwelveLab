@@ -1,0 +1,15 @@
+# Python
+tvenv/
+__pycache__/
+*.pyc
+generated_audio/
+.env
+
+# Next.js
+frontend/.env.local
+frontend/.next/
+frontend/node_modules/
+
+# General
+.DS_Store
+*.log
