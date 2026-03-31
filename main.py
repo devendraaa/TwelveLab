@@ -3,17 +3,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from pathlib import Path
-import uuid, time
+from dotenv import load_dotenv
+import uuid, time, os
+
+load_dotenv()  # ← loads your .env file
 
 app = FastAPI(title="VoiceAI API", version="1.0.0")
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 OUTPUT_DIR = Path("generated_audio")
 OUTPUT_DIR.mkdir(exist_ok=True)
 
@@ -27,9 +28,10 @@ VOICES = {
 }
 
 class SynthesizeRequest(BaseModel):
-    text: str
-    voice_id: str = "aria"
-    speed: float = 1.0
+    text:     str
+    voice_id: str   = "aria"
+    speed:    float = 1.0
+    user_id:  str | None = None   # ← add this
 
 @app.get("/")
 def root():
@@ -46,21 +48,41 @@ async def synthesize(req: SynthesizeRequest):
         raise HTTPException(400, "Text cannot be empty")
     if len(text) > 5000:
         raise HTTPException(400, "Text exceeds 5,000 character limit")
+
     voice = VOICES.get(req.voice_id.lower())
     if not voice:
-        raise HTTPException(404, f"Voice '{req.voice_id}' not found. Try: {list(VOICES.keys())}")
+        raise HTTPException(404, f"Voice '{req.voice_id}' not found.")
 
+    # ── Usage limit check ──────────────────────────────────────────────────
+    # Get user_id from request header (we'll send it from frontend)
+    user_id = req.user_id
+    if user_id:
+        from supabase import create_client
+        import os
+        sb = create_client(os.getenv("SUPABASE_URL",""), os.getenv("SUPABASE_SERVICE_KEY",""))
+        result = sb.table("users").select("char_used,char_limit,plan").eq("id", user_id).single().execute()
+        if result.data:
+            used  = result.data["char_used"]  or 0
+            limit = result.data["char_limit"] or 10000
+            if used + len(text) > limit:
+                raise HTTPException(429, {
+                    "error":       "usage_limit_exceeded",
+                    "used":        used,
+                    "limit":       limit,
+                    "upgrade_url": "/pricing",
+                    "message":     f"You've used {used:,} of {limit:,} characters. Upgrade to continue."
+                })
+
+    # ── Synthesize ─────────────────────────────────────────────────────────
     filename = f"{uuid.uuid4()}.mp3"
     filepath = OUTPUT_DIR / filename
 
-    # Try gTTS (online - best quality)
     try:
         from gtts import gTTS
         tts = gTTS(text=text, lang=voice["lang"], tld=voice["tld"], slow=False)
         tts.save(str(filepath))
         media_type = "audio/mpeg"
     except Exception:
-        # Fallback: pyttsx3 (offline - works without internet)
         try:
             import pyttsx3
             engine = pyttsx3.init()
@@ -68,7 +90,7 @@ async def synthesize(req: SynthesizeRequest):
             wav_path = str(filepath).replace(".mp3", ".wav")
             engine.save_to_file(text, wav_path)
             engine.runAndWait()
-            filepath = Path(wav_path)
+            filepath   = Path(wav_path)
             media_type = "audio/wav"
         except Exception as e:
             raise HTTPException(500, f"TTS failed: {str(e)}")
@@ -76,7 +98,7 @@ async def synthesize(req: SynthesizeRequest):
     return FileResponse(
         path=str(filepath),
         media_type=media_type,
-        filename=f"voiceai_{req.voice_id}.mp3",
+        filename=f"twelvelab_{req.voice_id}.mp3",
         headers={"X-Voice-Name": voice["name"], "X-Char-Count": str(len(text))}
     )
 

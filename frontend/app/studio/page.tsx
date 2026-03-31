@@ -74,12 +74,26 @@ export default function StudioPage() {
     if (!text.trim() || loading) return;
     setLoading(true); setError(null); setAudioUrl(null); setIsPlaying(false);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/synthesize`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, voice_id: voiceId, speed }),
-      });
-      if (!res.ok) { const e = await res.json(); throw new Error(e.detail || "Generation failed"); }
+const { data: { user: currentUser  } } = await supabase.auth.getUser();
+
+const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/synthesize`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    text,
+    voice_id: voiceId,
+    speed,
+    user_id: currentUser?.id,   // ← this sends user ID to backend
+  }),
+});
+      if (!res.ok) {
+  const e = await res.json();
+  // Handle usage limit error specially
+  if (res.status === 429) {
+    throw new Error("limit_exceeded: " + (e.detail?.message || "Usage limit reached. Upgrade to continue."));
+  }
+  throw new Error(e.detail || "Generation failed");
+ }
       const blob = await res.blob();
       const url  = URL.createObjectURL(blob);
       setAudioUrl(url);
