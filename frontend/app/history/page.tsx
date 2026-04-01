@@ -106,7 +106,7 @@ export default function HistoryPage() {
         @media(max-width:400px){.stats-grid{grid-template-columns:1fr!important}}
       `}</style>
 
-      <div style={{ display:"flex", minHeight:"100vh", minHeight:"100dvh", background:"#080808", color:"#f0ede8" }}>
+      <div style={{ display:"flex", minHeight:"100dvh", background:"#080808", color:"#f0ede8" }}>
 
         {/* ── SIDEBAR ── */}
         {sidebarOpen && <div className="overlay" onClick={() => setSidebarOpen(false)}/>}
