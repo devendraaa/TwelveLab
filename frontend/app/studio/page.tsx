@@ -1,7 +1,7 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 
 type Voice = { id: string; name: string; gender: string; accent: string; lang: string; emoji: string; };
