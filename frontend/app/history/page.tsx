@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
-type Generation = { id: string; voice_id: string; text: string; char_count: number; created_at: string; };
+type Generation = { id: string; voice_id: string; text: string; char_count: number; created_at: string; audio_url?: string; };
 
 const VOICE_COLORS: Record<string, string> = {
   aria: "#60a5fa", ryan: "#34d399", priya: "#fb923c",
@@ -48,22 +48,49 @@ export default function HistoryPage() {
     init();
   }, []);
 
+  async function deleteGeneration(id: string) {
+    try {
+      await supabase
+        .from("generations")
+        .delete()
+        .eq("id", id);
+
+      setGenerations(prev => prev.filter(g => g.id !== id));
+
+    } catch (err) {
+      console.error("Delete error:", err);
+    }
+  }
+
   async function replay(gen: Generation) {
-    if (audioUrls[gen.id]) {
-      if (audioRef.current) { audioRef.current.src = audioUrls[gen.id]; audioRef.current.play(); setPlaying(gen.id); }
+    if (!gen.audio_url) {
+      console.error("No audio URL available");
       return;
     }
-    setGenerating(gen.id);
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/synthesize`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ text:gen.text, voice_id:gen.voice_id }) });
-      if (!res.ok) throw new Error("Failed");
-      const blob = await res.blob();
-      const url  = URL.createObjectURL(blob);
-      setAudioUrls(prev => ({ ...prev, [gen.id]: url }));
-      if (audioRef.current) { audioRef.current.src = url; audioRef.current.play(); setPlaying(gen.id); }
-    } catch(e) { console.error(e); }
-    finally { setGenerating(null); }
+
+    if (audioRef.current) {
+      audioRef.current.src = gen.audio_url;
+      audioRef.current.play();
+      setPlaying(gen.id);
+    }
   }
+
+  // async function replay(gen: Generation) {
+  //   if (audioUrls[gen.id]) {
+  //     if (audioRef.current) { audioRef.current.src = audioUrls[gen.id]; audioRef.current.play(); setPlaying(gen.id); }
+  //     return;
+  //   }
+  //   setGenerating(gen.id);
+  //   try {
+  //     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/synthesize`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ text:gen.text, voice_id:gen.voice_id }) });
+  //     if (!res.ok) throw new Error("Failed");
+  //     const blob = await res.blob();
+  //     const url  = URL.createObjectURL(blob);
+  //     setAudioUrls(prev => ({ ...prev, [gen.id]: url }));
+  //     if (audioRef.current) { audioRef.current.src = url; audioRef.current.play(); setPlaying(gen.id); }
+  //   } catch(e) { console.error(e); }
+  //   finally { setGenerating(null); }
+  // }
 
   async function logout() { await supabase.auth.signOut(); router.push("/login"); }
 
@@ -288,7 +315,49 @@ export default function HistoryPage() {
                         ) : (
                           <><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 1.5L10 6L2.5 10.5V1.5Z" fill="currentColor"/></svg> Play</>
                         )}
+            
                       </button>
+                          {/* Download Button */}
+                          <a
+                            href={gen.audio_url}
+                            download
+                            className="action-btn"
+                            style={{
+                              flex:"1 1 120px",
+                              padding:"9px",
+                              borderRadius:"10px",
+                              background:"rgba(255,255,255,0.05)",
+                              border:"1px solid rgba(255,255,255,0.08)",
+                              color:"rgba(255,255,255,0.6)",
+                              fontSize:"13px",
+                              textAlign:"center"
+                            }}
+                          >
+                            Download
+                          </a>
+
+                          {/* Delete Button */}
+                          <button
+                            className="action-btn"
+                            onClick={() => deleteGeneration(gen.id)}
+                            style={{
+                              flex:"1 1 120px",
+                              padding:"9px",
+                              borderRadius:"10px",
+                              background:"rgba(248,113,113,0.08)",
+                              border:"1px solid rgba(248,113,113,0.2)",
+                              color:"#f87171",
+                              fontSize:"13px"
+                            }}
+                          >
+                            Delete
+                          </button>
+                      {/* <button className="action-btn"
+                        onClick={() => deleteGeneration(gen.id)}
+                        style={{ flex:1, padding:"9px", borderRadius:"10px", background:"transparent", border:"1px solid rgba(255,255,255,0.08)", color:"rgba(255,255,255,0.45)", fontSize:"13px" }}
+                      >
+                        Delete
+                      </button> */}
                       <button className="action-btn"
                         onClick={() => router.push(`/studio`)}
                         style={{ flex:1, padding:"9px", borderRadius:"10px", background:"transparent", border:"1px solid rgba(255,255,255,0.08)", color:"rgba(255,255,255,0.45)", fontSize:"13px" }}

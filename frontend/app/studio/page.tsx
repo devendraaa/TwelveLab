@@ -64,33 +64,110 @@ export default function StudioPage() {
     })();
   }, []);
 
+  // async function generate() {
+  //   if (!text.trim() || loading) return;
+  //   setLoading(true); setError(null); setAudioUrl(null); setIsPlaying(false);
+  //   try {
+  //     const { data: { user: cu } } = await supabase.auth.getUser();
+  //     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/synthesize`, {
+  //       method: "POST", headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ text, voice_id: voiceId, speed, user_id: cu?.id }),
+  //     });
+  //     if (!res.ok) {
+  //       const e = await res.json();
+  //       if (res.status === 429) throw new Error("limit_exceeded: " + (e.detail?.message || "Usage limit reached."));
+  //       throw new Error(e.detail || "Generation failed");
+  //     }
+  //     // const blob = await res.blob();
+  //     // const url  = URL.createObjectURL(blob);
+  //     // setAudioUrl(url);
+  //     const data = await res.json();
+  //     setAudioUrl(data.audio_url);
+  //     setTimeout(() => { audioRef.current?.play(); setIsPlaying(true); }, 100);
+  //     const { data: { user: u } } = await supabase.auth.getUser();
+  //     if (u) {
+  //       await supabase.from("generations").insert({ user_id: u.id, voice_id: voiceId, text, char_count: text.length });
+  //       await supabase.rpc("increment_char_used", { user_id_input: u.id, amount: text.length });
+  //       setCharUsed(p => p + text.length);
+  //       setGenCount(p => p + 1);
+  //     }
+  //   } catch(e: any) { setError(e.message); }
+  //   finally { setLoading(false); }
+  // }
   async function generate() {
     if (!text.trim() || loading) return;
-    setLoading(true); setError(null); setAudioUrl(null); setIsPlaying(false);
+
+    setLoading(true);
+    setError(null);
+    setAudioUrl(null);
+    setIsPlaying(false);
+
     try {
       const { data: { user: cu } } = await supabase.auth.getUser();
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/synthesize`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, voice_id: voiceId, speed, user_id: cu?.id }),
+
+      const API_URL =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+      const res = await fetch(`${API_URL}/synthesize`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text,
+          voice_id: voiceId,
+          speed,
+          user_id: cu?.id
+        }),
       });
+
       if (!res.ok) {
         const e = await res.json();
-        if (res.status === 429) throw new Error("limit_exceeded: " + (e.detail?.message || "Usage limit reached."));
+        if (res.status === 429)
+          throw new Error("limit_exceeded: " + (e.detail?.message || "Usage limit reached."));
         throw new Error(e.detail || "Generation failed");
       }
-      const blob = await res.blob();
-      const url  = URL.createObjectURL(blob);
-      setAudioUrl(url);
-      setTimeout(() => { audioRef.current?.play(); setIsPlaying(true); }, 100);
-      const { data: { user: u } } = await supabase.auth.getUser();
+
+      const data = await res.json();
+
+      if (!data.audio_url) throw new Error("Audio URL missing");
+
+      setAudioUrl(data.audio_url);
+
+      setTimeout(() => {
+        audioRef.current?.play();
+        setIsPlaying(true);
+      }, 100);
+
+      const u = cu;
+
       if (u) {
-        await supabase.from("generations").insert({ user_id: u.id, voice_id: voiceId, text, char_count: text.length });
-        await supabase.rpc("increment_char_used", { user_id_input: u.id, amount: text.length });
+        await supabase.from("generations").insert({
+          user_id: u.id,
+          voice_id: voiceId,
+          text,
+          char_count: text.length,
+          audio_url: data.audio_url
+        });
+        // await supabase.from("generations").insert({
+        //   user_id: u.id,
+        //   voice_id: voiceId,
+        //   text,
+        //   char_count: text.length
+        // });
+
+        await supabase.rpc("increment_char_used", {
+          user_id_input: u.id,
+          amount: text.length
+        });
+
         setCharUsed(p => p + text.length);
         setGenCount(p => p + 1);
       }
-    } catch(e: any) { setError(e.message); }
-    finally { setLoading(false); }
+
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function logout() { await supabase.auth.signOut(); router.push("/login"); }
