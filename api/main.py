@@ -343,6 +343,8 @@ def health():
         "time":     int(time.time()),
     }
 
+handler = app
+
 
 if __name__ == "__main__":
     import uvicorn
