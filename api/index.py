@@ -230,7 +230,7 @@ def root():
     }
 
 
-@app.get("/api/voices")
+@app.get("/voices")
 def list_voices():
     # Group by category for frontend display
     indian          = []
@@ -267,7 +267,7 @@ def list_voices():
     }
 
 
-@app.post("/api/synthesize")
+@app.post("/synthesize")
 async def synthesize(req: SynthesizeRequest):
     text = req.text.strip()
     if not text:
@@ -350,7 +350,7 @@ async def synthesize(req: SynthesizeRequest):
     }
 
 
-@app.get("/api/health")
+@app.get("/health")
 def health():
     return {
         "status":   "ok",

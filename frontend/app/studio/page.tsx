@@ -76,11 +76,13 @@ export default function StudioPage() {
     try {
       const { data: { user: cu } } = await supabase.auth.getUser();
 
-      const API_URL =
-        process.env.NEXT_PUBLIC_API_URL || "/api";
+      const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api";
+
+      console.log("API:", `${API_URL}/synthesize`);
 
       const res = await fetch(`${API_URL}/synthesize`, {
         method: "POST",
+        signal: AbortSignal.timeout(60000), // <-- add here
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text,
@@ -91,15 +93,25 @@ export default function StudioPage() {
       });
 
       if (!res.ok) {
-        const e = await res.json();
+        const text = await res.text();
+        let e;
+
+        try {
+          e = JSON.parse(text);
+        } catch {
+          throw new Error(text || "Server error");
+        }
+
         if (res.status === 429)
           throw new Error("limit_exceeded: " + (e.detail?.message || "Usage limit reached."));
+
         throw new Error(e.detail || "Generation failed");
       }
 
       const data = await res.json();
 
-      if (!data.audio_url) throw new Error("Audio URL missing");
+      if (!data.audio_url)
+        throw new Error("Audio URL missing");
 
       setAudioUrl(data.audio_url);
 
@@ -129,6 +141,7 @@ export default function StudioPage() {
       }
 
     } catch (e: any) {
+      console.error("Generate error:", e);
       setError(e.message);
     } finally {
       setLoading(false);
