@@ -361,7 +361,9 @@ def health():
         "time":     int(time.time()),
     }
 
-handler = app
+from mangum import Mangum
+
+handler = Mangum(app)
 
 # if __name__ == "__main__":
 #     import uvicorn
