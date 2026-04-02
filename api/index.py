@@ -36,7 +36,7 @@ try:
 except Exception as e:
     print("Supabase init skipped:", e)
 
-    
+
 # ── HuggingFace ────────────────────────────────────────────────────────────────
 HF_TOKEN   = os.getenv("HF_TOKEN", "")
 HF_HEADERS = {"Authorization": f"Bearer {HF_TOKEN}"}
@@ -230,7 +230,7 @@ def root():
     }
 
 
-@app.get("/voices")
+@app.get("/api/voices")
 def list_voices():
     # Group by category for frontend display
     indian          = []
@@ -267,7 +267,7 @@ def list_voices():
     }
 
 
-@app.post("/synthesize")
+@app.post("/api/synthesize")
 async def synthesize(req: SynthesizeRequest):
     text = req.text.strip()
     if not text:
@@ -350,7 +350,7 @@ async def synthesize(req: SynthesizeRequest):
     }
 
 
-@app.get("/health")
+@app.get("/api/health")
 def health():
     return {
         "status":   "ok",
