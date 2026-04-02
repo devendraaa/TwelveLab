@@ -3,9 +3,6 @@ import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { redirect } from "next/navigation";
 
-export default function Home() {
-  redirect("/studio");
-}
 
 type Voice = { id: string; name: string; gender: string; accent: string; lang: string; emoji: string; };
 
