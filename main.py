@@ -1,3 +1,5 @@
+import cloudinary
+import cloudinary.uploader
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -8,6 +10,12 @@ import uuid, time, os
 
 load_dotenv()  # ← loads your .env file
 
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET")
+)
+
 app = FastAPI(title="VoiceAI API", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
@@ -15,8 +23,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-OUTPUT_DIR = Path("generated_audio")
-OUTPUT_DIR.mkdir(exist_ok=True)
+# OUTPUT_DIR = Path("generated_audio")
+# OUTPUT_DIR.mkdir(exist_ok=True)
+
+OUTPUT_DIR = Path("/tmp")
 
 VOICES = {
     "aria":   {"name": "Aria",   "lang": "en", "tld": "com",   "gender": "Female", "accent": "American EN"},
@@ -95,12 +105,28 @@ async def synthesize(req: SynthesizeRequest):
         except Exception as e:
             raise HTTPException(500, f"TTS failed: {str(e)}")
 
-    return FileResponse(
-        path=str(filepath),
-        media_type=media_type,
-        filename=f"twelvelab_{req.voice_id}.mp3",
-        headers={"X-Voice-Name": voice["name"], "X-Char-Count": str(len(text))}
-    )
+    # return FileResponse(
+    #     path=str(filepath),
+    #     media_type=media_type,
+    #     filename=f"twelvelab_{req.voice_id}.mp3",
+    #     headers={"X-Voice-Name": voice["name"], "X-Char-Count": str(len(text))}
+    # )
+    try:
+        upload = cloudinary.uploader.upload(
+            str(filepath),
+            resource_type="video"
+        )
+
+        audio_url = upload["secure_url"]
+
+    except Exception as e:
+        raise HTTPException(500, f"Cloudinary upload failed: {str(e)}")
+
+    return {
+        "audio_url": audio_url,
+        "voice_name": voice["name"],
+        "char_count": len(text)
+    }
 
 @app.get("/health")
 def health():

@@ -1,0 +1,30 @@
+{
+  "builds": [
+    {
+      "src": "main.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/synthesize",
+      "dest": "main.py"
+    },
+    {
+      "src": "/voices",
+      "dest": "main.py"
+    },
+    {
+      "src": "/health",
+      "dest": "main.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "frontend/$1"
+    }
+  ]
+}
