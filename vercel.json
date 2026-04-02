@@ -1,7 +1,7 @@
 {
   "builds": [
     {
-      "src": "main.py",
+      "src": "app/main.py",
       "use": "@vercel/python"
     },
     {
@@ -12,15 +12,15 @@
   "routes": [
     {
       "src": "/synthesize",
-      "dest": "main.py"
+      "dest": "app/main.py"
     },
     {
       "src": "/voices",
-      "dest": "main.py"
+      "dest": "app/main.py"
     },
     {
       "src": "/health",
-      "dest": "main.py"
+      "dest": "app/main.py"
     },
     {
       "src": "/(.*)",
