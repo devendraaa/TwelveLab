@@ -77,7 +77,7 @@ export default function StudioPage() {
       const { data: { user: cu } } = await supabase.auth.getUser();
 
       const API_URL =
-        process.env.NEXT_PUBLIC_API_URL || "";
+        process.env.NEXT_PUBLIC_API_URL || "/api";
 
       const res = await fetch(`${API_URL}/synthesize`, {
         method: "POST",
