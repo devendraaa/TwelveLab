@@ -21,12 +21,12 @@ from supabase import create_client
 sb = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_KEY"))
 
 # ── HuggingFace ────────────────────────────────────────────────────────────────
-HF_TOKEN  = os.getenv("HF_TOKEN", "")
+HF_TOKEN   = os.getenv("HF_TOKEN", "")
 HF_HEADERS = {"Authorization": f"Bearer {HF_TOKEN}"}
 
 OUTPUT_DIR = Path("/tmp")
 
-app = FastAPI(title="TwelveLab API", version="2.0.0")
+app = FastAPI(title="TwelveLab API", version="3.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -35,54 +35,157 @@ app.add_middleware(
 )
 
 # ── Voice library ──────────────────────────────────────────────────────────────
+# Facebook MMS supports all Indian languages natively
+# ISO 639-3 codes used by MMS models
 VOICES = {
+
+    # ── Indian Languages (Primary focus) ──────────────────────────────────
+    "priya": {
+        "name": "Priya", "lang": "HI", "language": "Hindi",
+        "gender": "Female", "accent": "Natural", "region": "India",
+        "flag": "🇮🇳", "category": "indian",
+        "hf_model":  "facebook/mms-tts-hin",
+        "gtts_lang": "hi", "gtts_tld": "co.in",
+    },
+    "arjun": {
+        "name": "Arjun", "lang": "HI", "language": "Hindi",
+        "gender": "Male", "accent": "Clear", "region": "India",
+        "flag": "🇮🇳", "category": "indian",
+        "hf_model":  "facebook/mms-tts-hin",
+        "gtts_lang": "hi", "gtts_tld": "co.in",
+    },
+    "aisha": {
+        "name": "Aisha", "lang": "MR", "language": "Marathi",
+        "gender": "Female", "accent": "Natural", "region": "Maharashtra",
+        "flag": "🇮🇳", "category": "indian",
+        "hf_model":  "facebook/mms-tts-mar",
+        "gtts_lang": "mr", "gtts_tld": "co.in",
+    },
+    "rohan": {
+        "name": "Rohan", "lang": "MR", "language": "Marathi",
+        "gender": "Male", "accent": "Clear", "region": "Maharashtra",
+        "flag": "🇮🇳", "category": "indian",
+        "hf_model":  "facebook/mms-tts-mar",
+        "gtts_lang": "mr", "gtts_tld": "co.in",
+    },
+    "kavya": {
+        "name": "Kavya", "lang": "TA", "language": "Tamil",
+        "gender": "Female", "accent": "Natural", "region": "Tamil Nadu",
+        "flag": "🇮🇳", "category": "indian",
+        "hf_model":  "facebook/mms-tts-tam",
+        "gtts_lang": "ta", "gtts_tld": "co.in",
+    },
+    "kiran": {
+        "name": "Kiran", "lang": "TE", "language": "Telugu",
+        "gender": "Male", "accent": "Natural", "region": "Andhra Pradesh",
+        "flag": "🇮🇳", "category": "indian",
+        "hf_model":  "facebook/mms-tts-tel",
+        "gtts_lang": "te", "gtts_tld": "co.in",
+    },
+    "meera": {
+        "name": "Meera", "lang": "BN", "language": "Bengali",
+        "gender": "Female", "accent": "Warm", "region": "West Bengal",
+        "flag": "🇮🇳", "category": "indian",
+        "hf_model":  "facebook/mms-tts-ben",
+        "gtts_lang": "bn", "gtts_tld": "co.in",
+    },
+    "rahul": {
+        "name": "Rahul", "lang": "GU", "language": "Gujarati",
+        "gender": "Male", "accent": "Natural", "region": "Gujarat",
+        "flag": "🇮🇳", "category": "indian",
+        "hf_model":  "facebook/mms-tts-guj",
+        "gtts_lang": "gu", "gtts_tld": "co.in",
+    },
+    "ananya": {
+        "name": "Ananya", "lang": "KN", "language": "Kannada",
+        "gender": "Female", "accent": "Clear", "region": "Karnataka",
+        "flag": "🇮🇳", "category": "indian",
+        "hf_model":  "facebook/mms-tts-kan",
+        "gtts_lang": "kn", "gtts_tld": "co.in",
+    },
+    "vikram": {
+        "name": "Vikram", "lang": "PA", "language": "Punjabi",
+        "gender": "Male", "accent": "Warm", "region": "Punjab",
+        "flag": "🇮🇳", "category": "indian",
+        "hf_model":  "facebook/mms-tts-pan",
+        "gtts_lang": "pa", "gtts_tld": "co.in",
+    },
+    "diya": {
+        "name": "Diya", "lang": "ML", "language": "Malayalam",
+        "gender": "Female", "accent": "Natural", "region": "Kerala",
+        "flag": "🇮🇳", "category": "indian",
+        "hf_model":  "facebook/mms-tts-mal",
+        "gtts_lang": "ml", "gtts_tld": "co.in",
+    },
+    "amit": {
+        "name": "Amit", "lang": "OR", "language": "Odia",
+        "gender": "Male", "accent": "Natural", "region": "Odisha",
+        "flag": "🇮🇳", "category": "indian",
+        "hf_model":  "facebook/mms-tts-ory",
+        "gtts_lang": "or", "gtts_tld": "co.in",
+    },
+
+    # ── Indian English accents ─────────────────────────────────────────────
+    "riya": {
+        "name": "Riya", "lang": "EN-IN", "language": "English (Indian)",
+        "gender": "Female", "accent": "Indian", "region": "India",
+        "flag": "🇮🇳", "category": "indian_english",
+        "hf_model":  "espnet/kan-bayashi_ljspeech_vits",
+        "gtts_lang": "en", "gtts_tld": "co.in",
+    },
+    "dev": {
+        "name": "Dev", "lang": "EN-IN", "language": "English (Indian)",
+        "gender": "Male", "accent": "Indian", "region": "India",
+        "flag": "🇮🇳", "category": "indian_english",
+        "hf_model":  "espnet/kan-bayashi_ljspeech_vits",
+        "gtts_lang": "en", "gtts_tld": "co.in",
+    },
+
+    # ── International voices ───────────────────────────────────────────────
     "aria": {
-        "name": "Aria",   "lang": "EN", "gender": "Female", "accent": "American",
-        "hf_model":   "espnet/kan-bayashi_ljspeech_vits",
-        "gtts_lang":  "en", "gtts_tld": "com",
+        "name": "Aria", "lang": "EN", "language": "English (US)",
+        "gender": "Female", "accent": "American", "region": "USA",
+        "flag": "🇺🇸", "category": "international",
+        "hf_model":  "espnet/kan-bayashi_ljspeech_vits",
+        "gtts_lang": "en", "gtts_tld": "com",
     },
     "ryan": {
-        "name": "Ryan",   "lang": "EN", "gender": "Male",   "accent": "British",
-        "hf_model":   "espnet/kan-bayashi_ljspeech_vits",
-        "gtts_lang":  "en", "gtts_tld": "co.uk",
-    },
-    "priya": {
-        "name": "Priya",  "lang": "HI", "gender": "Female", "accent": "Natural",
-        "hf_model":   "facebook/mms-tts-hin",
-        "gtts_lang":  "hi", "gtts_tld": "co.in",
+        "name": "Ryan", "lang": "EN", "language": "English (UK)",
+        "gender": "Male", "accent": "British", "region": "UK",
+        "flag": "🇬🇧", "category": "international",
+        "hf_model":  "espnet/kan-bayashi_ljspeech_vits",
+        "gtts_lang": "en", "gtts_tld": "co.uk",
     },
     "sofia": {
-        "name": "Sofia",  "lang": "ES", "gender": "Female", "accent": "Warm",
-        "hf_model":   "facebook/mms-tts-spa",
-        "gtts_lang":  "es", "gtts_tld": "es",
-    },
-    "lena": {
-        "name": "Lena",   "lang": "DE", "gender": "Female", "accent": "Clear",
-        "hf_model":   "facebook/mms-tts-deu",
-        "gtts_lang":  "de", "gtts_tld": "de",
+        "name": "Sofia", "lang": "ES", "language": "Spanish",
+        "gender": "Female", "accent": "Warm", "region": "Spain",
+        "flag": "🇪🇸", "category": "international",
+        "hf_model":  "facebook/mms-tts-spa",
+        "gtts_lang": "es", "gtts_tld": "es",
     },
     "pierre": {
-        "name": "Pierre", "lang": "FR", "gender": "Male",   "accent": "Classic",
-        "hf_model":   "facebook/mms-tts-fra",
-        "gtts_lang":  "fr", "gtts_tld": "fr",
+        "name": "Pierre", "lang": "FR", "language": "French",
+        "gender": "Male", "accent": "Classic", "region": "France",
+        "flag": "🇫🇷", "category": "international",
+        "hf_model":  "facebook/mms-tts-fra",
+        "gtts_lang": "fr", "gtts_tld": "fr",
     },
 }
 
+
 class SynthesizeRequest(BaseModel):
     text:     str
-    voice_id: str        = "aria"
+    voice_id: str        = "priya"
     speed:    float      = 1.0
     user_id:  str | None = None
 
 
 # ── TTS helpers ────────────────────────────────────────────────────────────────
 def try_huggingface(text: str, model: str) -> bytes:
-    """Call HuggingFace Inference API. Returns raw audio bytes."""
     url = f"https://api-inference.huggingface.co/models/{model}"
     res = requests.post(url, headers=HF_HEADERS, json={"inputs": text}, timeout=30)
     if res.status_code == 503:
-        # Model loading — wait and retry once
-        print(f"HF model loading, waiting 20s...")
+        print("HF model loading, waiting 20s...")
         time.sleep(20)
         res = requests.post(url, headers=HF_HEADERS, json={"inputs": text}, timeout=60)
     if res.status_code != 200:
@@ -91,7 +194,6 @@ def try_huggingface(text: str, model: str) -> bytes:
 
 
 def try_gtts(text: str, lang: str, tld: str) -> bytes:
-    """Fallback: Google TTS. Returns raw MP3 bytes."""
     from gtts import gTTS
     import io
     tts = gTTS(text=text, lang=lang, tld=tld, slow=False)
@@ -105,19 +207,46 @@ def try_gtts(text: str, lang: str, tld: str) -> bytes:
 def root():
     return {
         "status":  "TwelveLab API running",
-        "version": "2.0.0",
+        "version": "3.0.0",
         "engine":  "huggingface" if HF_TOKEN else "gtts",
+        "voices":  len(VOICES),
     }
 
 
 @app.get("/voices")
 def list_voices():
+    # Group by category for frontend display
+    indian          = []
+    indian_english  = []
+    international   = []
+
+    for vid, v in VOICES.items():
+        entry = {
+            "id":       vid,
+            "name":     v["name"],
+            "lang":     v["lang"],
+            "language": v["language"],
+            "gender":   v["gender"],
+            "accent":   v["accent"],
+            "region":   v["region"],
+            "flag":     v["flag"],
+            "category": v["category"],
+        }
+        if v["category"] == "indian":
+            indian.append(entry)
+        elif v["category"] == "indian_english":
+            indian_english.append(entry)
+        else:
+            international.append(entry)
+
     return {
-        "voices": [
-            {"id": vid, "name": v["name"], "lang": v["lang"],
-             "gender": v["gender"], "accent": v["accent"]}
-            for vid, v in VOICES.items()
-        ]
+        "voices": list({**{vid: v} for vid, v in VOICES.items()}.keys()),
+        "grouped": {
+            "indian":         indian,
+            "indian_english": indian_english,
+            "international":  international,
+        },
+        "total": len(VOICES),
     }
 
 
@@ -131,7 +260,7 @@ async def synthesize(req: SynthesizeRequest):
 
     voice = VOICES.get(req.voice_id.lower())
     if not voice:
-        raise HTTPException(404, f"Voice '{req.voice_id}' not found.")
+        raise HTTPException(404, f"Voice '{req.voice_id}' not found. Available: {list(VOICES.keys())}")
 
     # ── Usage limit check ──────────────────────────────────────────────────
     if req.user_id:
@@ -154,25 +283,27 @@ async def synthesize(req: SynthesizeRequest):
         except Exception as e:
             print(f"Usage check skipped: {e}")
 
-    # ── Synthesize: HuggingFace → gTTS fallback ───────────────────────────
+    # ── Synthesize ─────────────────────────────────────────────────────────
     audio_bytes = None
     ext         = "wav"
+    engine_used = "gtts"
 
     if HF_TOKEN:
         try:
-            print(f"HuggingFace: {voice['hf_model']}")
+            print(f"HuggingFace: {voice['hf_model']} for {voice['language']}")
             audio_bytes = try_huggingface(text, voice["hf_model"])
-            ext = "wav"
+            ext         = "wav"
+            engine_used = "huggingface"
             print(f"HF success: {len(audio_bytes)} bytes")
         except Exception as hf_err:
             print(f"HF failed ({hf_err}), falling back to gTTS")
 
     if audio_bytes is None:
         try:
-            print(f"gTTS fallback: lang={voice['gtts_lang']}")
+            print(f"gTTS: lang={voice['gtts_lang']}")
             audio_bytes = try_gtts(text, voice["gtts_lang"], voice["gtts_tld"])
-            ext = "mp3"
-            print(f"gTTS success: {len(audio_bytes)} bytes")
+            ext         = "mp3"
+            engine_used = "gtts"
         except Exception as gtts_err:
             raise HTTPException(500, f"All TTS engines failed: {gtts_err}")
 
@@ -185,31 +316,31 @@ async def synthesize(req: SynthesizeRequest):
     try:
         upload    = cloudinary.uploader.upload(str(filepath), resource_type="video")
         audio_url = upload["secure_url"]
-        print(f"Cloudinary upload success: {audio_url}")
+        print(f"Cloudinary: {audio_url}")
     except Exception as e:
         raise HTTPException(500, f"Cloudinary upload failed: {str(e)}")
     finally:
-        # Clean up temp file
         try: filepath.unlink()
         except: pass
 
     return {
         "audio_url":  audio_url,
         "voice_name": voice["name"],
+        "language":   voice["language"],
         "char_count": len(text),
-        "engine":     "huggingface" if HF_TOKEN and ext == "wav" else "gtts",
+        "engine":     engine_used,
     }
 
 
 @app.get("/health")
 def health():
     return {
-        "status":    "ok",
-        "version":   "2.0.0",
-        "engine":    "huggingface" if HF_TOKEN else "gtts",
-        "hf_token":  "set" if HF_TOKEN else "missing",
-        "voices":    len(VOICES),
-        "time":      int(time.time()),
+        "status":   "ok",
+        "version":  "3.0.0",
+        "engine":   "huggingface" if HF_TOKEN else "gtts",
+        "hf_token": "set" if HF_TOKEN else "missing",
+        "voices":   len(VOICES),
+        "time":     int(time.time()),
     }
 
 
