@@ -17,9 +17,16 @@ cloudinary.config(
 )
 
 # ── Supabase ───────────────────────────────────────────────────────────────────
+# from supabase import create_client
+# sb = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_KEY"))
 from supabase import create_client
-sb = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_KEY"))
 
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
+
+sb = None
+if SUPABASE_URL and SUPABASE_KEY:
+    sb = create_client(SUPABASE_URL, SUPABASE_KEY)
 # ── HuggingFace ────────────────────────────────────────────────────────────────
 HF_TOKEN   = os.getenv("HF_TOKEN", "")
 HF_HEADERS = {"Authorization": f"Bearer {HF_TOKEN}"}
@@ -265,19 +272,20 @@ async def synthesize(req: SynthesizeRequest):
     # ── Usage limit check ──────────────────────────────────────────────────
     if req.user_id:
         try:
-            result = sb.table("users").select("char_used,char_limit,plan") \
-                       .eq("id", req.user_id).single().execute()
-            if result.data:
-                used  = result.data["char_used"]  or 0
-                limit = result.data["char_limit"] or 10000
-                if used + len(text) > limit:
-                    raise HTTPException(429, detail={
-                        "error":       "usage_limit_exceeded",
-                        "used":        used,
-                        "limit":       limit,
-                        "upgrade_url": "/pricing",
-                        "message":     f"You've used {used:,} of {limit:,} characters. Upgrade to continue."
-                    })
+            if sb:
+                result = sb.table("users").select("char_used,char_limit,plan") \
+                           .eq("id", req.user_id).single().execute()
+                if result.data:
+                    used  = result.data["char_used"]  or 0
+                    limit = result.data["char_limit"] or 10000
+                    if used + len(text) > limit:
+                        raise HTTPException(429, detail={
+                            "error":       "usage_limit_exceeded",
+                            "used":        used,
+                            "limit":       limit,
+                            "upgrade_url": "/pricing",
+                            "message":     f"You've used {used:,} of {limit:,} characters. Upgrade to continue."
+                        })
         except HTTPException:
             raise
         except Exception as e:
