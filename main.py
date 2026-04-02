@@ -105,12 +105,6 @@ async def synthesize(req: SynthesizeRequest):
         except Exception as e:
             raise HTTPException(500, f"TTS failed: {str(e)}")
 
-    # return FileResponse(
-    #     path=str(filepath),
-    #     media_type=media_type,
-    #     filename=f"twelvelab_{req.voice_id}.mp3",
-    #     headers={"X-Voice-Name": voice["name"], "X-Char-Count": str(len(text))}
-    # )
     try:
         upload = cloudinary.uploader.upload(
             str(filepath),
