@@ -75,23 +75,6 @@ export default function HistoryPage() {
     }
   }
 
-  // async function replay(gen: Generation) {
-  //   if (audioUrls[gen.id]) {
-  //     if (audioRef.current) { audioRef.current.src = audioUrls[gen.id]; audioRef.current.play(); setPlaying(gen.id); }
-  //     return;
-  //   }
-  //   setGenerating(gen.id);
-  //   try {
-  //     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/synthesize`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ text:gen.text, voice_id:gen.voice_id }) });
-  //     if (!res.ok) throw new Error("Failed");
-  //     const blob = await res.blob();
-  //     const url  = URL.createObjectURL(blob);
-  //     setAudioUrls(prev => ({ ...prev, [gen.id]: url }));
-  //     if (audioRef.current) { audioRef.current.src = url; audioRef.current.play(); setPlaying(gen.id); }
-  //   } catch(e) { console.error(e); }
-  //   finally { setGenerating(null); }
-  // }
-
   async function logout() { await supabase.auth.signOut(); router.push("/login"); }
 
   const filtered = generations.filter(g =>

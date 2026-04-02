@@ -7,26 +7,36 @@ from pathlib import Path
 from dotenv import load_dotenv
 import uuid, time, os, requests
 
-load_dotenv()
+# Safe dotenv
+if os.path.exists(".env"):
+    load_dotenv()
 
-# ── Cloudinary ─────────────────────────────────────────────────────────────────
-cloudinary.config(
-    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
-    api_key=os.getenv("CLOUDINARY_API_KEY"),
-    api_secret=os.getenv("CLOUDINARY_API_SECRET")
-)
+# Safe Cloudinary
+CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME")
+CLOUDINARY_API_KEY    = os.getenv("CLOUDINARY_API_KEY")
+CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET")
 
-# ── Supabase ───────────────────────────────────────────────────────────────────
-# from supabase import create_client
-# sb = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_KEY"))
+if CLOUDINARY_CLOUD_NAME:
+    cloudinary.config(
+        cloud_name=CLOUDINARY_CLOUD_NAME,
+        api_key=CLOUDINARY_API_KEY,
+        api_secret=CLOUDINARY_API_SECRET
+    )
+
+# Safe Supabase
 from supabase import create_client
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
 
 sb = None
-if SUPABASE_URL and SUPABASE_KEY:
-    sb = create_client(SUPABASE_URL, SUPABASE_KEY)
+try:
+    if SUPABASE_URL and SUPABASE_KEY:
+        sb = create_client(SUPABASE_URL, SUPABASE_KEY)
+except Exception as e:
+    print("Supabase init skipped:", e)
+
+    
 # ── HuggingFace ────────────────────────────────────────────────────────────────
 HF_TOKEN   = os.getenv("HF_TOKEN", "")
 HF_HEADERS = {"Authorization": f"Bearer {HF_TOKEN}"}
