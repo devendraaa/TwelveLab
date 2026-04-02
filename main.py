@@ -8,13 +8,20 @@ from pathlib import Path
 from dotenv import load_dotenv
 import uuid, time, os
 
-load_dotenv()  # ← loads your .env file
+load_dotenv()
 
 cloudinary.config(
     cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
     api_key=os.getenv("CLOUDINARY_API_KEY"),
     api_secret=os.getenv("CLOUDINARY_API_SECRET")
 )
+
+from supabase import create_client
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
+
+sb = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
 app = FastAPI(title="VoiceAI API", version="1.0.0")
 app.add_middleware(
@@ -67,9 +74,9 @@ async def synthesize(req: SynthesizeRequest):
     # Get user_id from request header (we'll send it from frontend)
     user_id = req.user_id
     if user_id:
-        from supabase import create_client
-        import os
-        sb = create_client(os.getenv("SUPABASE_URL",""), os.getenv("SUPABASE_SERVICE_KEY",""))
+        # from supabase import create_client
+        # import os
+        # sb = create_client(os.getenv("SUPABASE_URL",""), os.getenv("SUPABASE_SERVICE_KEY",""))
         result = sb.table("users").select("char_used,char_limit,plan").eq("id", user_id).single().execute()
         if result.data:
             used  = result.data["char_used"]  or 0
