@@ -76,12 +76,12 @@ export default function StudioPage() {
     try {
       const { data: { user: cu } } = await supabase.auth.getUser();
 
-      const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api";
+      const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
       console.log("API:", `${API_URL}/synthesize`);
 
       const res = await fetch(`${API_URL}/synthesize`, {
-        method: "POST",
+        method: "POST", 
         signal: AbortSignal.timeout(60000), // <-- add here
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
