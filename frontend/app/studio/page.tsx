@@ -78,9 +78,9 @@ export default function StudioPage() {
 
       const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
-      console.log("API:", `${API_URL}/api/synthesize`);
+      console.log("API:", `${API_URL}/synthesize`);
 
-      const res = await fetch(`${API_URL}/api/synthesize`, {
+      const res = await fetch(`${API_URL}/synthesize`, {
         method: "POST", 
         signal: AbortSignal.timeout(60000), // <-- add here
         headers: { "Content-Type": "application/json" },
