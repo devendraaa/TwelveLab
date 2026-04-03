@@ -1,15 +1,24 @@
-import cloudinary
-import cloudinary.uploader
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from pathlib import Path
-from dotenv import load_dotenv
 import uuid, time, os, requests
 
+app = FastAPI(title="TwelveLab API", version="3.0.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+from dotenv import load_dotenv
 # Safe dotenv
 if os.path.exists(".env"):
     load_dotenv()
+
+import cloudinary
+import cloudinary.uploader
 
 # Safe Cloudinary
 CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME")
@@ -42,14 +51,6 @@ HF_TOKEN   = os.getenv("HF_TOKEN", "")
 HF_HEADERS = {"Authorization": f"Bearer {HF_TOKEN}"}
 
 OUTPUT_DIR = Path("/tmp")
-
-app = FastAPI(title="TwelveLab API", version="3.0.0")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # ── Voice library ──────────────────────────────────────────────────────────────
 # Facebook MMS supports all Indian languages natively
