@@ -1,15 +1,25 @@
 services:
   - type: web
-    name: voiceai-api
+    name: twelveLab-api
     env: python
-    region: singapore   # closest to Mumbai
+    region: singapore
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    startCommand: uvicorn index:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: ENV
         value: production
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: HF_TOKEN
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: API_KEYS
         sync: false

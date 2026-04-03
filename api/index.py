@@ -1,21 +1,54 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from pathlib import Path
-import uuid, time, os, requests
+import uuid, time, os
+import httpx
 
 app = FastAPI(title="TwelveLab API", version="3.0.0")
+
+# ── CORS — restrict to known origins ────────────────────────────────────────
+ALLOWED_ORIGINS = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "").split(",") if o.strip()]
+if not ALLOWED_ORIGINS:
+    ALLOWED_ORIGINS = ["*"]  # fallback only for local dev
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
+# ── API Key Authentication ──────────────────────────────────────────────────
+VALID_API_KEYS = [k.strip() for k in os.getenv("API_KEYS", "").split(",") if k.strip()]
+
+async def verify_api_key(request: Request):
+    """Verify the caller has a valid API key in the Authorization header or x-api-key header."""
+    key = request.headers.get("x-api-key") or request.headers.get("Authorization", "").replace("Bearer ", "")
+    if not key:
+        raise HTTPException(401, "Missing API key. Provide it via x-api-key or Authorization header.")
+    if VALID_API_KEYS and key not in VALID_API_KEYS:
+        raise HTTPException(403, "Invalid API key.")
+    return True
+
+# ── Simple in-memory rate limiter ────────────────────────────────────────────
+_rate_store: dict[str, list[float]] = {}
+RATE_LIMIT = int(os.getenv("RATE_LIMIT_PER_MINUTE", "60"))
+RATE_WINDOW = 60  # seconds
+
+def rate_limit_check(client_id: str) -> None:
+    now = time.time()
+    _rate_store.setdefault(client_id, [])
+    # prune old entries
+    _rate_store[client_id] = [t for t in _rate_store[client_id] if now - t < RATE_WINDOW]
+    if len(_rate_store[client_id]) >= RATE_LIMIT:
+        raise HTTPException(429, f"Rate limit exceeded: {RATE_LIMIT} requests per minute. Retry after {RATE_WINDOW}s.")
+    _rate_store[client_id].append(now)
+
 from dotenv import load_dotenv
 # Safe dotenv
-if os.path.exists(".env"):
-    load_dotenv()
+load_dotenv()
 
 import cloudinary
 import cloudinary.uploader
@@ -47,8 +80,7 @@ except Exception as e:
 
 
 # ── HuggingFace ────────────────────────────────────────────────────────────────
-HF_TOKEN   = os.getenv("HF_TOKEN", "")
-HF_HEADERS = {"Authorization": f"Bearer {HF_TOKEN}"}
+HF_TOKEN = os.getenv("HF_TOKEN", "")
 
 OUTPUT_DIR = Path("/tmp")
 
@@ -199,19 +231,26 @@ class SynthesizeRequest(BaseModel):
 
 
 # ── TTS helpers ────────────────────────────────────────────────────────────────
-def try_huggingface(text: str, model: str) -> bytes:
+async def try_huggingface(text: str, model: str) -> bytes:
     url = f"https://api-inference.huggingface.co/models/{model}"
-    res = requests.post(url, headers=HF_HEADERS, json={"inputs": text}, timeout=30)
-    if res.status_code == 503:
-        print("HF model loading, waiting 20s...")
-        time.sleep(20)
-        res = requests.post(url, headers=HF_HEADERS, json={"inputs": text}, timeout=60)
-    if res.status_code != 200:
-        raise Exception(f"HF error {res.status_code}: {res.text[:200]}")
-    return res.content
+    headers = {"Authorization": f"Bearer {HF_TOKEN}"}
+    async with httpx.AsyncClient(timeout=30) as client:
+        res = await client.post(url, headers=headers, json={"inputs": text})
+        if res.status_code == 503:
+            retry_after = int(res.headers.get("retry-after", 20))
+            print(f"HF model loading, retrying after {retry_after}s...")
+            await client.close()
+            async with httpx.AsyncClient(timeout=60) as retry_client:
+                retry_res = await retry_client.post(url, headers=headers, json={"inputs": text})
+                if retry_res.status_code != 200:
+                    raise Exception(f"HF error {retry_res.status_code}: {retry_res.text[:200]}")
+                return retry_res.content
+        if res.status_code != 200:
+            raise Exception(f"HF error {res.status_code}: {res.text[:200]}")
+        return res.content
 
 
-def try_gtts(text: str, lang: str, tld: str) -> bytes:
+async def try_gtts(text: str, lang: str, tld: str) -> bytes:
     from gtts import gTTS
     import io
     tts = gTTS(text=text, lang=lang, tld=tld, slow=False)
@@ -269,7 +308,14 @@ def list_voices():
 
 
 @app.post("/synthesize")
-async def synthesize(req: SynthesizeRequest):
+async def synthesize(req: SynthesizeRequest, request: Request):
+    # ── Auth ───────────────────────────────────────────────────────────────
+    await verify_api_key(request)
+
+    # ── Rate limit ─────────────────────────────────────────────────────────
+    client_id = request.headers.get("x-api-key", request.client.host)
+    rate_limit_check(client_id)
+
     text = req.text.strip()
     if not text:
         raise HTTPException(400, "Text cannot be empty")
@@ -310,7 +356,7 @@ async def synthesize(req: SynthesizeRequest):
     if HF_TOKEN:
         try:
             print(f"HuggingFace: {voice['hf_model']} for {voice['language']}")
-            audio_bytes = try_huggingface(text, voice["hf_model"])
+            audio_bytes = await try_huggingface(text, voice["hf_model"])
             ext         = "wav"
             engine_used = "huggingface"
             print(f"HF success: {len(audio_bytes)} bytes")
@@ -320,7 +366,7 @@ async def synthesize(req: SynthesizeRequest):
     if audio_bytes is None:
         try:
             print(f"gTTS: lang={voice['gtts_lang']}")
-            audio_bytes = try_gtts(text, voice["gtts_lang"], voice["gtts_tld"])
+            audio_bytes = await try_gtts(text, voice["gtts_lang"], voice["gtts_tld"])
             ext         = "mp3"
             engine_used = "gtts"
         except Exception as gtts_err:
@@ -354,13 +400,18 @@ async def synthesize(req: SynthesizeRequest):
 @app.get("/health")
 def health():
     return {
-        "status":   "ok",
-        "version":  "3.0.0",
-        "engine":   "huggingface" if HF_TOKEN else "gtts",
-        "hf_token": "set" if HF_TOKEN else "missing",
-        "voices":   len(VOICES),
-        "time":     int(time.time()),
+        "status":  "ok",
+        "version": "3.0.0",
+        "voices":  len(VOICES),
     }
+
+# ── Serverless handler (Vercel / AWS Lambda) ────────────────────────────────
+try:
+    from mangum import Mangum
+    handler = Mangum(app)
+except ImportError:
+    pass
+
 # if __name__ == "__main__":
 #     import uvicorn
 #     uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
