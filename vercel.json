@@ -9,7 +9,7 @@
   ], 
   "routes": 
   [ { "src": "/(synthesize|voices|health)", 
-      "dest": "api/app.py" 
+      "dest": "/app.py" 
     }, 
     { "src": "/(.*)", 
       "dest": "frontend/$1" 
