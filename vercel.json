@@ -1,7 +1,7 @@
 { 
   "builds": 
   [ { "src": "api/index.py", 
-      "use": "@vercel/python"
+      "use": "@vercel/python" 
     }, 
     { "src": "frontend/package.json", 
       "use": "@vercel/next"  
@@ -9,7 +9,7 @@
   ], 
   "routes": 
   [ { "src": "/(synthesize|voices|health)", 
-      "dest": "/app.py" 
+      "dest": "/api/app.py" 
     }, 
     { "src": "/(.*)", 
       "dest": "frontend/$1" 
