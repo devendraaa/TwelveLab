@@ -74,21 +74,14 @@ export default function StudioPage() {
     setIsPlaying(false);
 
     try {
-      const { data: { user: cu } } = await supabase.auth.getUser();
-
-      const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api";
-
-      console.log("API:", `${API_URL}/synthesize`);
-
-      const res = await fetch(`${API_URL}/synthesize`, {
-        method: "POST", 
-        signal: AbortSignal.timeout(60000), // <-- add here
+      const res = await fetch("/api/synthesize", {
+        method: "POST",
+        signal: AbortSignal.timeout(60000),
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text,
           voice_id: voiceId,
           speed,
-          user_id: cu?.id
         }),
       });
 
@@ -103,9 +96,9 @@ export default function StudioPage() {
         }
 
         if (res.status === 429)
-          throw new Error("limit_exceeded: " + (e.detail?.message || "Usage limit reached."));
+          throw new Error("limit_exceeded: " + (e.detail?.message || e.error || "Usage limit reached."));
 
-        throw new Error(e.detail || "Generation failed");
+        throw new Error(e.detail || e.error || "Generation failed");
       }
 
       const data = await res.json();
@@ -114,31 +107,13 @@ export default function StudioPage() {
         throw new Error("Audio URL missing");
 
       setAudioUrl(data.audio_url);
+      setCharUsed(p => p + text.length);
+      setGenCount(p => p + 1);
 
       setTimeout(() => {
         audioRef.current?.play();
         setIsPlaying(true);
       }, 100);
-
-      const u = cu;
-
-      if (u) {
-        await supabase.from("generations").insert({
-          user_id: u.id,
-          voice_id: voiceId,
-          text,
-          char_count: text.length,
-          audio_url: data.audio_url
-        });
-
-        await supabase.rpc("increment_char_used", {
-          user_id_input: u.id,
-          amount: text.length
-        });
-
-        setCharUsed(p => p + text.length);
-        setGenCount(p => p + 1);
-      }
 
     } catch (e: any) {
       console.error("Generate error:", e);
