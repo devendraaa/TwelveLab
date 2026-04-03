@@ -1,21 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export async function POST(req: NextRequest) {
-  if (!API_BASE || !SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    console.warn("Auth proxy: missing env variables, forwarding without backend calls");
-  }
-
   const body = await req.json();
 
-  // Auth check (get user from Supabase cookie)
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -50,10 +44,7 @@ export async function POST(req: NextRequest) {
         "Content-Type": "application/json",
         "x-api-key": process.env.BACKEND_API_KEY!,
       },
-      body: JSON.stringify({
-        ...body,
-        user_id: user.id,
-      }),
+      body: JSON.stringify({ ...body, user_id: user.id }),
     });
 
     const data = await res.json();
@@ -62,7 +53,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(data, { status: res.status });
     }
 
-    // Save to Supabase generation history
+    // Save generation history
     await supabase.from("generations").insert({
       user_id: user.id,
       voice_id: body.voice_id || "priya",
@@ -73,7 +64,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(data);
   } catch (e: any) {
-    console.error("Auth proxy error:", e.message);
+    console.error("TTS proxy error:", e.message);
     return NextResponse.json({ error: "Failed to synthesize audio" }, { status: 500 });
   }
 }

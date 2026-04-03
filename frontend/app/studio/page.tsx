@@ -74,7 +74,7 @@ export default function StudioPage() {
     setIsPlaying(false);
 
     try {
-      const res = await fetch("/api/synthesize", {
+      const res = await fetch("/tts", {
         method: "POST",
         signal: AbortSignal.timeout(60000),
         headers: { "Content-Type": "application/json" },
