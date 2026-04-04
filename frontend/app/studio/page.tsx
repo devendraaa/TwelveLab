@@ -2,49 +2,27 @@
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
-
-
-type Voice = { id: string; name: string; gender: string; accent: string; lang: string; emoji: string; };
-
-const VOICES: Voice[] = [
-  { id: "aria",   name: "Aria",   gender: "Female", accent: "American", lang: "EN", emoji: "🇺🇸" },
-  { id: "ryan",   name: "Ryan",   gender: "Male",   accent: "British",  lang: "EN", emoji: "🇬🇧" },
-  { id: "priya",  name: "Priya",  gender: "Female", accent: "Natural",  lang: "HI", emoji: "🇮🇳" },
-  { id: "sofia",  name: "Sofia",  gender: "Female", accent: "Warm",     lang: "ES", emoji: "🇪🇸" },
-  { id: "lena",   name: "Lena",   gender: "Female", accent: "Clear",    lang: "DE", emoji: "🇩🇪" },
-  { id: "pierre", name: "Pierre", gender: "Male",   accent: "Classic",  lang: "FR", emoji: "🇫🇷" },
-];
-
-const SAMPLES: Record<string, string> = {
-  "Podcast":  "Welcome back to The Builder's Mindset — where founders share the real story behind building their products. Today's guest built a profitable SaaS in just 90 days.",
-  "Product":  "Introducing TwelveLab — the only text-to-speech platform that actually sounds human. Clone any voice in 60 seconds and ship with our developer API in minutes.",
-  "Story":    "The old lighthouse keeper had not spoken to another soul in forty-seven days. Each morning he wound the great clockwork, each night he listened to the sea.",
-  "News":     "Markets rose sharply today as investors responded to better-than-expected inflation data. The Sensex gained over 800 points, crossing a key threshold.",
-  "Hindi":    "नमस्ते, ट्वेल्वलैब में आपका स्वागत है। यहाँ आप किसी भी टेक्स्ट को असली मानवीय आवाज़ में बदल सकते हैं।",
-};
-
-const VC: Record<string, string> = {
-  aria: "#60a5fa", ryan: "#34d399", priya: "#fb923c",
-  sofia: "#f472b6", lena: "#a78bfa", pierre: "#22d3ee",
-};
+import { VOICES, SAMPLES, VC } from "@/lib/voices";
+import { useAuth } from "@/hooks/use-auth";
+import { DesktopSidebar, MobileDrawer } from "@/components/sidebar";
 
 export default function StudioPage() {
+  const { user, mounted, logout } = useAuth();
+  const router = useRouter();
+
   const [text,        setText]        = useState(SAMPLES["Podcast"]);
   const [voiceId,     setVoiceId]     = useState("aria");
   const [speed,       setSpeed]       = useState(1.0);
   const [loading,     setLoading]     = useState(false);
   const [audioUrl,    setAudioUrl]    = useState<string | null>(null);
   const [error,       setError]       = useState<string | null>(null);
-  const [user,        setUser]        = useState<any>(null);
   const [charUsed,    setCharUsed]    = useState(0);
   const [charLimit]                   = useState(10000);
   const [isPlaying,   setIsPlaying]   = useState(false);
   const [navOpen,     setNavOpen]     = useState(false);
   const [userOpen,    setUserOpen]    = useState(false);
-  const [mounted,     setMounted]     = useState(false);
   const [genCount,    setGenCount]    = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const router   = useRouter();
 
   const charCount  = text.length;
   const usagePct   = Math.min((charUsed / charLimit) * 100, 100);
@@ -53,19 +31,14 @@ export default function StudioPage() {
   const isLimit    = error?.includes("limit_exceeded");
 
   useEffect(() => {
-    if (!supabase) return;
-    setMounted(true);
+    if (!mounted || !supabase || !user) return;
     (async () => {
-      if (!supabase) return;
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push("/login"); return; }
-      setUser(user);
       const { data } = await supabase.from("users").select("char_used").eq("id", user.id).single();
       if (data) setCharUsed(data.char_used || 0);
       const { count } = await supabase.from("generations").select("*", { count:"exact", head:true }).eq("user_id", user.id);
       setGenCount(count || 0);
     })();
-  }, []);
+  }, [mounted, user]);
 
   async function generate() {
     if (!supabase || !text.trim() || loading) return;
@@ -121,8 +94,6 @@ export default function StudioPage() {
       setLoading(false);
     }
   }
-
-  async function logout() { supabase?.auth.signOut(); router.push("/login"); }
 
   if (!mounted) return null;
 
@@ -350,152 +321,18 @@ export default function StudioPage() {
         }
       `}</style>
 
-      {/* ── DESKTOP SIDEBAR ───────────────────────────────────────────────── */}
-      <aside className="desktop-sidebar" style={{ fontFamily:"'Geist',sans-serif" }}>
-        <div style={{ padding:"24px 20px 20px", borderBottom:"1px solid rgba(255,255,255,0.06)" }}>
-          <div style={{ fontFamily:"'Syne',sans-serif", fontSize:"20px", fontWeight:800, letterSpacing:"-0.5px" }}>
-            Twelve<span style={{ color:"#c8f060" }}>Lab</span>
-          </div>
-          <div style={{ fontSize:"10px", color:"rgba(255,255,255,0.25)", marginTop:"3px", letterSpacing:".1em" }}>VOICE SYNTHESIS</div>
-        </div>
-
-        <nav style={{ padding:"12px 10px", flex:1 }}>
-          {[
-            { label:"Studio",  route:"/studio",  active:true },
-            { label:"History", route:"/history", active:false },
-          ].map(item => (
-            <button key={item.label} className={`nav-item ${item.active ? "active" : ""}`}
-              onClick={() => router.push(item.route)}
-              style={{ marginBottom:"2px" }}>
-              {item.active
-                ? <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="5.5" y="1.5" width="5" height="8" rx="2.5" stroke="currentColor" strokeWidth="1.4"/><path d="M3 8a5 5 0 0 0 10 0" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><line x1="8" y1="13" x2="8" y2="15" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
-                : <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 3v5l3 2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/><path d="M2.5 8a5.5 5.5 0 1 1 1.2 3.4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M2.5 5v3h3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              }
-              {item.label}
-            </button>
-          ))}
-          <div style={{ height:"1px", background:"rgba(255,255,255,0.05)", margin:"10px 6px" }}/>
-          <button className="nav-item" style={{ color:"#c8f060", background:"rgba(200,240,96,0.07)" }}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.8 4L14 5.5l-3 3 .7 4.3L8 11l-3.7 1.8.7-4.3-3-3L6.2 5 8 1Z" fill="currentColor" opacity=".2" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>
-            Upgrade
-          </button>
-        </nav>
-
-        {/* Stats */}
-        <div style={{ padding:"12px 16px", borderTop:"1px solid rgba(255,255,255,0.06)" }}>
-          <div style={{ display:"flex", gap:"8px", marginBottom:"14px" }}>
-            <div className="stat-badge">
-              <div style={{ fontFamily:"'Syne',sans-serif", fontSize:"20px", fontWeight:700, color:"#e8e4de" }}>{genCount}</div>
-              <div style={{ fontSize:"10px", color:"rgba(255,255,255,0.3)", marginTop:"2px" }}>generated</div>
-            </div>
-            <div className="stat-badge">
-              <div style={{ fontFamily:"'Syne',sans-serif", fontSize:"20px", fontWeight:700, color:"#e8e4de" }}>{Math.round(usagePct)}%</div>
-              <div style={{ fontSize:"10px", color:"rgba(255,255,255,0.3)", marginTop:"2px" }}>used</div>
-            </div>
-          </div>
-          <div style={{ marginBottom:"6px", display:"flex", justifyContent:"space-between" }}>
-            <span style={{ fontSize:"11px", color:"rgba(255,255,255,0.3)" }}>Usage</span>
-            <span style={{ fontSize:"11px", color:"rgba(255,255,255,0.3)" }}>{charUsed.toLocaleString()} / {charLimit.toLocaleString()}</span>
-          </div>
-          <div style={{ height:"3px", background:"rgba(255,255,255,0.07)", borderRadius:"2px", overflow:"hidden" }}>
-            <div className="usage-fill" style={{ width:`${usagePct}%`, background: usagePct > 80 ? "linear-gradient(90deg,#fb923c,#ef4444)" : "linear-gradient(90deg,#c8f060,#86d915)" }}/>
-          </div>
-        </div>
-
-        {/* User */}
-        <div style={{ padding:"12px 16px", borderTop:"1px solid rgba(255,255,255,0.06)", position:"relative" }}>
-          <button onClick={() => setUserOpen(!userOpen)} style={{
-            width:"100%", display:"flex", alignItems:"center", gap:"10px",
-            padding:"8px 10px", borderRadius:"12px", border:"none", background:"transparent",
-            cursor:"pointer", transition:"background .15s", fontFamily:"'Geist',sans-serif",
-          }}
-          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)"}
-          onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}
-          >
-            <div style={{ width:"34px", height:"34px", borderRadius:"50%", background:"linear-gradient(135deg,#c8f060,#7fc22a)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"14px", fontWeight:700, color:"#000", flexShrink:0 }}>
-              {user?.email?.charAt(0).toUpperCase()}
-            </div>
-            <div style={{ flex:1, textAlign:"left", overflow:"hidden" }}>
-              <div style={{ fontSize:"13px", fontWeight:500, color:"rgba(255,255,255,0.75)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{user?.email?.split("@")[0]}</div>
-              <div style={{ fontSize:"10px", color:"rgba(255,255,255,0.28)" }}>Free plan</div>
-            </div>
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ color:"rgba(255,255,255,0.2)", transform:userOpen?"rotate(180deg)":"none", transition:"transform .2s", flexShrink:0 }}><path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-          </button>
-          {userOpen && (
-            <>
-              <div onClick={() => setUserOpen(false)} style={{ position:"fixed", inset:0, zIndex:49 }}/>
-              <div style={{ position:"absolute", bottom:"calc(100% + 6px)", left:"12px", right:"12px", background:"#181818", border:"1px solid rgba(255,255,255,0.1)", borderRadius:"16px", overflow:"hidden", zIndex:50, boxShadow:"0 -20px 48px rgba(0,0,0,0.6)" }}>
-                <div style={{ padding:"14px 16px", borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
-                  <div style={{ fontSize:"11px", color:"rgba(255,255,255,0.3)" }}>Signed in as</div>
-                  <div style={{ fontSize:"13px", color:"rgba(255,255,255,0.8)", marginTop:"2px", overflow:"hidden", textOverflow:"ellipsis" }}>{user?.email}</div>
-                </div>
-                <div style={{ padding:"6px" }}>
-                  {["Profile","API Keys","Billing"].map(i => (
-                    <button key={i} className="nav-item" style={{ padding:"10px 12px", fontSize:"13px" }}>{i}</button>
-                  ))}
-                </div>
-                <div style={{ padding:"6px", borderTop:"1px solid rgba(255,255,255,0.07)" }}>
-                  <button onClick={logout} className="nav-item" style={{ color:"#f87171", padding:"10px 12px", fontSize:"13px" }}>Sign out</button>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      </aside>
-
-      {/* ── MOBILE NAV DRAWER ─────────────────────────────────────────────── */}
-      {navOpen && (
-        <>
-          <div className="overlay" onClick={() => setNavOpen(false)}/>
-          <aside className="nav-drawer">
-            <div style={{ padding:"20px 18px", borderBottom:"1px solid rgba(255,255,255,0.06)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-              <div>
-                <div style={{ fontFamily:"'Syne',sans-serif", fontSize:"19px", fontWeight:800 }}>Twelve<span style={{ color:"#c8f060" }}>Lab</span></div>
-                <div style={{ fontSize:"10px", color:"rgba(255,255,255,0.25)", marginTop:"2px", letterSpacing:".08em" }}>VOICE SYNTHESIS</div>
-              </div>
-              <button onClick={() => setNavOpen(false)} style={{ background:"rgba(255,255,255,0.07)", border:"none", color:"rgba(255,255,255,0.6)", cursor:"pointer", padding:"8px", borderRadius:"10px" }}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
-              </button>
-            </div>
-            <nav style={{ padding:"10px 10px", flex:1 }}>
-              {[
-                { label:"Studio", route:"/studio", active:true },
-                { label:"History", route:"/history", active:false },
-              ].map(item => (
-                <button key={item.label} className={`nav-item ${item.active?"active":""}`}
-                  onClick={() => { router.push(item.route); setNavOpen(false); }}
-                  style={{ marginBottom:"3px", fontSize:"15px" }}
-                >{item.label}</button>
-              ))}
-              <div style={{ height:"1px", background:"rgba(255,255,255,0.06)", margin:"10px 6px" }}/>
-              <button className="nav-item" style={{ color:"#c8f060", background:"rgba(200,240,96,0.07)", fontSize:"15px" }}>⭐ Upgrade plan</button>
-            </nav>
-            {/* Usage in drawer */}
-            <div style={{ padding:"16px 18px", borderTop:"1px solid rgba(255,255,255,0.06)" }}>
-              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"8px" }}>
-                <span style={{ fontSize:"12px", color:"rgba(255,255,255,0.35)" }}>Monthly usage</span>
-                <span style={{ fontSize:"12px", color: usagePct>80?"#fb923c":"rgba(255,255,255,0.4)" }}>{charUsed.toLocaleString()} / {charLimit.toLocaleString()}</span>
-              </div>
-              <div style={{ height:"4px", background:"rgba(255,255,255,0.08)", borderRadius:"2px", overflow:"hidden" }}>
-                <div className="usage-fill" style={{ width:`${usagePct}%`, background: usagePct>80?"linear-gradient(90deg,#fb923c,#ef4444)":"linear-gradient(90deg,#c8f060,#86d915)" }}/>
-              </div>
-            </div>
-            {/* User in drawer */}
-            <div style={{ padding:"12px 10px 20px", borderTop:"1px solid rgba(255,255,255,0.06)" }}>
-              <div style={{ display:"flex", alignItems:"center", gap:"10px", padding:"10px 12px", borderRadius:"12px", background:"rgba(255,255,255,0.03)", marginBottom:"8px" }}>
-                <div style={{ width:"36px", height:"36px", borderRadius:"50%", background:"linear-gradient(135deg,#c8f060,#7fc22a)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"15px", fontWeight:700, color:"#000", flexShrink:0 }}>
-                  {user?.email?.charAt(0).toUpperCase()}
-                </div>
-                <div style={{ flex:1, overflow:"hidden" }}>
-                  <div style={{ fontSize:"14px", color:"rgba(255,255,255,0.8)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{user?.email?.split("@")[0]}</div>
-                  <div style={{ fontSize:"11px", color:"rgba(255,255,255,0.3)" }}>Free plan</div>
-                </div>
-              </div>
-              <button onClick={logout} className="nav-item" style={{ color:"#f87171", background:"rgba(248,113,113,0.06)" }}>Sign out</button>
-            </div>
-          </aside>
-        </>
-      )}
+      {/* ── SIDEBARS ──────────────────────────────────────────────────────── */}
+      <MobileDrawer
+        user={user} charUsed={charUsed} charLimit={charLimit}
+        genCount={genCount} activeRoute="studio"
+        open={navOpen} onClose={() => setNavOpen(false)}
+        onLogout={logout}
+      />
+      <DesktopSidebar
+        user={user} charUsed={charUsed} charLimit={charLimit}
+        genCount={genCount} activeRoute="studio"
+        onLogout={logout}
+      />
 
       {/* ── TOPBAR ────────────────────────────────────────────────────────── */}
       <div className="topbar">
