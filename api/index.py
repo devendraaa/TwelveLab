@@ -264,23 +264,42 @@ def _adjust_wav_speed(audio_bytes: bytes, speed: float) -> bytes:
 
 
 def _adjust_mp3_speed(audio_bytes: bytes, speed: float) -> bytes:
-    """Change MP3 playback speed by resampling using miniaudio (no ffmpeg)."""
+    """Change MP3 playback speed: decode to WAV, adjust speed, return WAV."""
     try:
         import miniaudio
+        import wave
         import io as _io
 
-        # Decode MP3 to raw samples
-        samples = miniaudio.decode(audio_bytes, nchannels=1)
-        sample_rate = samples.sample_rate
-        frames = samples.samples
+        # Decode MP3 to PCM
+        decoded = miniaudio.decode(audio_bytes, nchannels=1)
+        sample_rate = decoded.sample_rate
+        raw_samples = decoded.samples  # bytes
 
-        # Resample at the scaled rate
+        # Unpack PCM samples
+        import struct
+        samples = struct.unpack("<h" * (len(raw_samples) // 2), raw_samples)
+
+        # Resample by changing playback rate
+        new_len = int(len(samples) / speed)
+        resampled = []
+        for i in range(new_len):
+            src_pos = i * speed
+            src_idx = int(src_pos)
+            frac = src_pos - src_idx
+            a = samples[src_idx] if src_idx < len(samples) else 0
+            b = samples[min(src_idx + 1, len(samples) - 1)]
+            resampled.append(int(a + (b - a) * frac))
+
+        # Write adjusted audio as WAV (no MP3 encoder needed)
         new_rate = int(sample_rate * speed)
-        resampled = miniaudio.resample(frames, sample_rate, new_rate)
+        out = _io.BytesIO()
+        with wave.open(out, "wb") as wf:
+            wf.setnchannels(1)
+            wf.setsampwidth(2)
+            wf.setframerate(new_rate)
+            wf.writeframes(struct.pack("<" + "h" * len(resampled), *resampled))
 
-        # Encode back to MP3
-        out_buf = miniaudio.encode_mp3(resampled, new_rate, nchannels=1)
-        return bytes(out_buf)
+        return out.getvalue()
     except ImportError:
         print("miniaudio not installed, skipping MP3 speed adjustment")
         return audio_bytes
