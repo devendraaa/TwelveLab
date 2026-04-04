@@ -235,6 +235,35 @@ async def try_gtts(text: str, lang: str, tld: str) -> bytes:
     return buf.getvalue()
 
 
+def _adjust_wav_speed(audio_bytes: bytes, speed: float) -> bytes:
+    """Change WAV playback speed by resampling (no ffmpeg needed).
+    Just rewrites the WAV data with a modified sample rate."""
+    import wave
+    import io as _io
+
+    try:
+        with wave.open(_io.BytesIO(audio_bytes), "rb") as wf:
+            n_channels = wf.getnchannels()
+            sampwidth = wf.getsampwidth()
+            framerate = wf.getframerate()
+            n_frames = wf.getnframes()
+            frames = wf.readframes(n_frames)
+
+        new_framerate = int(framerate * speed)
+
+        out = _io.BytesIO()
+        with wave.open(out, "wb") as wf_out:
+            wf_out.setnchannels(n_channels)
+            wf_out.setsampwidth(sampwidth)
+            wf_out.setframerate(new_framerate)
+            wf_out.writeframes(frames)
+
+        return out.getvalue()
+    except Exception as e:
+        print(f"WAV speed adjustment failed ({e}), using original audio")
+        return audio_bytes
+
+
 # ── Routes ────────────────────────────────────────────────────────────────────
 @app.get("/api")
 def root():
@@ -327,26 +356,9 @@ async def synthesize(req: SynthesizeRequest, request: Request):
         except Exception as e:
             raise HTTPException(500, f"All TTS engines failed: {e}")
 
-    # Apply speed modification if not 1.0
-    if req.speed != 1.0:
-        try:
-            from pydub import AudioSegment
-            import io
-            if ext == "wav":
-                audio = AudioSegment.from_wav(io.BytesIO(audio_bytes))
-            else:
-                audio = AudioSegment.from_mp3(io.BytesIO(audio_bytes))
-            audio = audio.speedup(playback_speed=req.speed)
-            if ext == "wav":
-                bio = io.BytesIO()
-                audio.export(bio, format="wav")
-                audio_bytes = bio.getvalue()
-            else:
-                bio = io.BytesIO()
-                audio.export(bio, format="mp3")
-                audio_bytes = bio.getvalue()
-        except Exception as e:
-            print(f"Speed adjustment failed ({e}), using original audio")
+    # Apply speed modification if not 1.0 (pure Python, no ffmpeg needed)
+    if req.speed != 1.0 and ext == "wav":
+        audio_bytes = _adjust_wav_speed(audio_bytes, req.speed)
 
     filename = f"{uuid.uuid4()}.{ext}"
     filepath = OUTPUT_DIR / filename
