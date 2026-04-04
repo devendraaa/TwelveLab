@@ -76,6 +76,16 @@ export default function LandingPage() {
         .d4 { animation-delay: .4s; }
         .d5 { animation-delay: .5s; }
         .float { animation: float 4s ease-in-out infinite; }
+        .voice-card { transition: all .2s; }
+        .voice-card:hover { border-color: rgba(200,240,96,0.2) !important; background: rgba(200,240,96,0.03) !important; transform: translateY(-2px); }
+        .feat-card { transition: all .25s; }
+        .feat-card:hover { border-color: rgba(200,240,96,0.15) !important; background: rgba(200,240,96,0.03) !important; transform: translateY(-2px); }
+        .btn-primary { transition: all .2s; }
+        .btn-primary:hover { background: #d4f570 !important; transform: translateY(-2px); box-shadow: 0 12px 32px rgba(200,240,96,0.25) !important; }
+        .btn-secondary { transition: all .2s; }
+        .btn-secondary:hover { border-color: rgba(255,255,255,0.25) !important; color: rgba(255,255,255,0.9) !important; }
+        .cta-link { transition: all .2s; }
+        .cta-link:hover { color: #d4f570 !important; }
       `}</style>
 
       {/* ── NAV ──────────────────────────────────────────── */}
@@ -90,7 +100,7 @@ export default function LandingPage() {
           Twelve<span style={{ color: "#c8f060" }}>Lab</span>
         </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <Link href="/login" style={{
+          <Link href="/login" className="btn-secondary" style={{
             padding: "9px 18px", borderRadius: "100px",
             border: "1px solid rgba(255,255,255,0.1)", background: "transparent",
             color: "rgba(255,255,255,0.7)", fontSize: "14px", fontWeight: 500,
@@ -98,7 +108,7 @@ export default function LandingPage() {
           }}>
             Sign in
           </Link>
-          <Link href="/studio" style={{
+          <Link href="/studio" className="btn-primary" style={{
             padding: "9px 18px", borderRadius: "100px",
             background: "#c8f060", color: "#000", border: "none",
             fontSize: "14px", fontWeight: 600, textDecoration: "none",
@@ -164,7 +174,7 @@ export default function LandingPage() {
         </p>
 
         <div className="fade-up d3" style={{ display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center" }}>
-          <Link href="/studio" style={{
+          <Link href="/studio" className="btn-primary" style={{
             padding: "16px 36px", borderRadius: "100px",
             background: "#c8f060", color: "#000",
             fontSize: "16px", fontWeight: 700, fontFamily: "'Syne',sans-serif",
@@ -173,7 +183,7 @@ export default function LandingPage() {
           }}>
             Start generating audio &rarr;
           </Link>
-          <Link href="#features" style={{
+          <Link href="#features" className="btn-secondary" style={{
             padding: "16px 36px", borderRadius: "100px",
             border: "1px solid rgba(255,255,255,0.1)", background: "transparent",
             color: "rgba(255,255,255,0.7)",
@@ -232,24 +242,14 @@ export default function LandingPage() {
           gap: "12px",
         }}>
           {voices.map(v => (
-            <div key={v.id} style={{
+            <Link href="/studio" className="voice-card" style={{
               padding: "18px 20px", borderRadius: "16px",
               background: "rgba(255,255,255,0.03)",
               border: "1px solid rgba(255,255,255,0.06)",
               display: "flex", alignItems: "center", gap: "14px",
               transition: "all .2s",
-            }}
-            onMouseEnter={e => {
-              const el = e.currentTarget as HTMLElement;
-              el.style.borderColor = "rgba(200,240,96,0.2)";
-              el.style.background = "rgba(200,240,96,0.03)";
-            }}
-            onMouseLeave={e => {
-              const el = e.currentTarget as HTMLElement;
-              el.style.borderColor = "rgba(255,255,255,0.06)";
-              el.style.background = "rgba(255,255,255,0.03)";
-            }}
-            >
+              textDecoration: "none", color: "inherit",
+            }}>
               <div style={{
                 width: "44px", height: "44px", borderRadius: "50%",
                 background: "rgba(200,240,96,0.08)",
@@ -268,12 +268,12 @@ export default function LandingPage() {
                   {v.accent} &middot; {v.lang}
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
 
         <div style={{ textAlign: "center", marginTop: "16px" }}>
-          <Link href="/studio" style={{
+          <Link href="/studio" className="cta-link" style={{
             fontSize: "14px", color: "#c8f060", textDecoration: "none", fontWeight: 500,
             borderBottom: "1px solid rgba(200,240,96,0.3)", paddingBottom: "2px",
           }}>
@@ -306,23 +306,11 @@ export default function LandingPage() {
           gap: "16px",
         }}>
           {features.map(f => (
-            <div key={f.title} style={{
+            <div key={f.title} className="feat-card" style={{
               padding: "28px 24px", borderRadius: "20px",
               background: "rgba(255,255,255,0.02)",
               border: "1px solid rgba(255,255,255,0.06)",
               transition: "all .25s",
-            }}
-            onMouseEnter={e => {
-              const el = e.currentTarget as HTMLElement;
-              el.style.borderColor = "rgba(200,240,96,0.15)";
-              el.style.background = "rgba(200,240,96,0.03)";
-              el.style.transform = "translateY(-2px)";
-            }}
-            onMouseLeave={e => {
-              const el = e.currentTarget as HTMLElement;
-              el.style.borderColor = "rgba(255,255,255,0.06)";
-              el.style.background = "rgba(255,255,255,0.02)";
-              el.style.transform = "translateY(0)";
             }}
             >
               <div style={{
@@ -413,7 +401,7 @@ Content-Type: application/json
           }}>
             Start synthesizing speech for free. No credit card required.
           </p>
-          <Link href="/studio" style={{
+          <Link href="/studio" className="btn-primary" style={{
             display: "inline-block",
             padding: "18px 40px", borderRadius: "100px",
             background: "#c8f060", color: "#000",

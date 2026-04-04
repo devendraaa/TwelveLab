@@ -12,6 +12,7 @@ export default function LoginPage() {
   const router = useRouter();
 
   async function handleSubmit() {
+    if (!supabase) { setError("Supabase not configured"); return; }
     setLoading(true);
     setError("");
 
