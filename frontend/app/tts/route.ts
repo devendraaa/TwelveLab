@@ -58,6 +58,9 @@ export async function POST(req: NextRequest) {
   // Forward to backend
   try {
     const url = `${API_BASE}/synthesize`;
+    console.log("Calling backend:", url);
+    console.log("BACKEND_API_KEY set:", !!process.env.BACKEND_API_KEY);
+
     const res = await fetch(url, {
       method: "POST",
       headers: {
@@ -67,7 +70,11 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({ ...body, user_id: user.id }),
     });
 
-    const data = await res.json();
+    let data: Record<string, unknown> = {};
+    const raw = await res.text();
+    console.log("Backend response status:", res.status);
+    console.log("Backend response body:", raw.slice(0, 500));
+    try { data = JSON.parse(raw); } catch {}
 
     if (!res.ok) {
       return NextResponse.json(data, { status: res.status });
@@ -84,7 +91,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(data);
   } catch (e: any) {
-    console.error("TTS proxy error:", e.message);
-    return NextResponse.json({ error: "Failed to synthesize audio" }, { status: 500 });
+    console.error("TTS proxy error:", e);
+    return NextResponse.json({ error: "Failed to synthesize audio", detail: e.message }, { status: 500 });
   }
 }
