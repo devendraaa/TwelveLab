@@ -67,17 +67,21 @@ export default function StudioPage() {
 
   async function generate() {
     if (!text.trim() || loading) return;
-
     setLoading(true);
     setError(null);
     setAudioUrl(null);
     setIsPlaying(false);
-
     try {
+      // ← Get session token
+      const { data: { session } } = await supabase.auth.getSession();
+
       const res = await fetch("/tts", {
         method: "POST",
         signal: AbortSignal.timeout(60000),
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type":  "application/json",
+          "Authorization": `Bearer ${session?.access_token}`,  // ← add this
+        },
         body: JSON.stringify({
           text,
           voice_id: voiceId,
@@ -86,34 +90,20 @@ export default function StudioPage() {
       });
 
       if (!res.ok) {
-        const text = await res.text();
+        const txt = await res.text();
         let e;
-
-        try {
-          e = JSON.parse(text);
-        } catch {
-          throw new Error(text || "Server error");
-        }
-
+        try { e = JSON.parse(txt); } catch { throw new Error(txt || "Server error"); }
         if (res.status === 429)
           throw new Error("limit_exceeded: " + (e.detail?.message || e.error || "Usage limit reached."));
-
         throw new Error(e.detail || e.error || "Generation failed");
       }
 
       const data = await res.json();
-
-      if (!data.audio_url)
-        throw new Error("Audio URL missing");
-
+      if (!data.audio_url) throw new Error("Audio URL missing");
       setAudioUrl(data.audio_url);
       setCharUsed(p => p + text.length);
       setGenCount(p => p + 1);
-
-      setTimeout(() => {
-        audioRef.current?.play();
-        setIsPlaying(true);
-      }, 100);
+      setTimeout(() => { audioRef.current?.play(); setIsPlaying(true); }, 100);
 
     } catch (e: any) {
       console.error("Generate error:", e);
