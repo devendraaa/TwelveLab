@@ -357,7 +357,13 @@ async def synthesize(req: SynthesizeRequest, request: Request):
             raise HTTPException(500, f"All TTS engines failed: {e}")
 
     # Apply speed modification if not 1.0 (pure Python, no ffmpeg needed)
-    if req.speed != 1.0 and ext == "wav":
+    print(f"Speed requested: {req.speed}, ext: {ext}, engine: {engine_used}")
+    if req.speed != 1.0:
+        if ext == "wav":
+            audio_bytes = _adjust_wav_speed(audio_bytes, req.speed)
+            print(f"WAV speed applied: {req.speed}x")
+        else:
+            print("Speed adjustment skipped: MP3 not supported without ffmpeg")
         audio_bytes = _adjust_wav_speed(audio_bytes, req.speed)
 
     filename = f"{uuid.uuid4()}.{ext}"
