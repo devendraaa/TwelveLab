@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 // Backend URL: use explicitly set API URL, or derive from current origin
-const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL
-  || process.env.NEXT_PUBLIC_API_URL
-  || `https://${process.env.VERCEL_URL}`;
+const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL;
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
