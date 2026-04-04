@@ -102,13 +102,13 @@ export async function POST(req: NextRequest) {
 
     if (insertError) {
       console.error("Supabase insert failed:", insertError);
-      return NextResponse.json({
-        ...data,
-        _saved_to_history: false,
-        _error: insertError.message,
-      });
     }
-    console.log("Generation saved to history, user:", user.id);
+
+    // Increment character usage count on the user's profile
+    await supabase.rpc("increment_char_used", {
+      user_id_input: user.id,
+      amount: body.text.length,
+    });
 
     return NextResponse.json(data);
   } catch (e: any) {
