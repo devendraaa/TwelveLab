@@ -5,11 +5,14 @@ import { createClient } from "@supabase/supabase-js";
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL;
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// Service role key for server-side Supabase operations (bypasses RLS)
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_SERVICE_KEY!;
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
 
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  // Use service key for server-side operations (bypasses RLS)
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY || SUPABASE_ANON_KEY);
 
   // Read token from Authorization header
   const authHeader = req.headers.get("authorization");
@@ -82,13 +85,30 @@ export async function POST(req: NextRequest) {
     }
 
     // Save generation history
-    await supabase.from("generations").insert({
+    const payload: Record<string, unknown> = {
       user_id: user.id,
       voice_id: body.voice_id || "priya",
       text: body.text,
       char_count: body.text.length,
-      audio_url: data.audio_url,
-    });
+      audio_url: data.audio_url as string,
+    };
+
+    // Only include speed if the column exists
+    if (body.speed !== undefined) {
+      payload.speed = body.speed;
+    }
+
+    const { error: insertError } = await supabase.from("generations").insert(payload);
+
+    if (insertError) {
+      console.error("Supabase insert failed:", insertError);
+      return NextResponse.json({
+        ...data,
+        _saved_to_history: false,
+        _error: insertError.message,
+      });
+    }
+    console.log("Generation saved to history, user:", user.id);
 
     return NextResponse.json(data);
   } catch (e: any) {
