@@ -58,8 +58,35 @@ export default function SignupPage() {
     });
 
     setLoading(false);
-    if (error) { setError(error.message); return; }
+    if (error) {
+      // If already registered but not verified, resend the confirmation email
+      if (error.message?.toLowerCase().includes("already") || error.message?.toLowerCase().includes("registered")) {
+        const { error: resendError } = await supabase.auth.resend({
+          type: "signup",
+          email,
+          options: { emailRedirectTo: `${window.location.origin}/studio` },
+        });
+        if (resendError) { setError(resendError.message); return; }
+        setSent(true);
+        return;
+      }
+      setError(error.message);
+      return;
+    }
     setSent(true);
+  }
+
+  async function handleResend() {
+    if (!email) return;
+    setLoading(true);
+    setError("");
+    const { error } = await supabase!.auth.resend({
+      type: "signup",
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/studio` },
+    });
+    setLoading(false);
+    if (error) { setError(error.message); return; }
   }
 
   if (sent) {
@@ -79,9 +106,13 @@ export default function SignupPage() {
             >
               Go to Studio
             </button>
-            <Link href="/signup" className="text-xs text-[#6b6860] hover:text-white transition-colors mt-4 inline-block">
-              Didn&apos;t receive the email? Try again
-            </Link>
+            <button
+              onClick={handleResend}
+              disabled={loading}
+              className="text-xs text-[#6b6860] hover:text-[#c8f060] transition-colors mt-4 inline-block disabled:opacity-40"
+            >
+              {loading ? "Sending…" : "Didn't receive the email? Resend"}
+            </button>
           </div>
         </div>
       </main>
