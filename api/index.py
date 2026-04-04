@@ -236,7 +236,7 @@ async def try_gtts(text: str, lang: str, tld: str) -> bytes:
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
-@app.get("/")
+@app.get("/api")
 def root():
     return {
         "status":  "TwelveLab API running",
@@ -246,7 +246,7 @@ def root():
     }
 
 
-@app.get("/voices")
+@app.get("/api/voices")
 def list_voices():
     indian = []
     indian_english = []
@@ -277,7 +277,7 @@ def list_voices():
     }
 
 
-@app.post("/synthesize")
+@app.post("/api/synthesize")
 async def synthesize(req: SynthesizeRequest, request: Request):
     await verify_api_key(request)
 
@@ -349,7 +349,7 @@ async def synthesize(req: SynthesizeRequest, request: Request):
     }
 
 
-@app.get("/health")
+@app.get("/api/health")
 def health():
     return {
         "status": "ok",

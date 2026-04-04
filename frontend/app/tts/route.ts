@@ -56,11 +56,13 @@ export async function POST(req: NextRequest) {
     }
   } catch {}
 
-  // Forward to backend (Vercel routes /api/* → api/index.py)
-  try {
-    const url = `${API_BASE}/api/synthesize`;
-    console.log("Calling backend:", url);
-    console.log("BACKEND_API_KEY set:", !!process.env.BACKEND_API_KEY);
+  // Forward to backend. Use origin from request since server-side fetch needs absolute URL.
+  // The backend is mounted at the same Vercel origin, at /api/synthesize.
+  const origin = process.env.NEXT_PUBLIC_BACKEND_URL
+    || `https://${req.headers.get("host")}`;
+  const url = `${origin}/api/synthesize`;
+  console.log("Calling backend:", url);
+  console.log("BACKEND_API_KEY set:", !!process.env.BACKEND_API_KEY);
 
     const res = await fetch(url, {
       method: "POST",
@@ -95,4 +97,3 @@ export async function POST(req: NextRequest) {
     console.error("TTS proxy error:", e);
     return NextResponse.json({ error: "Failed to synthesize audio", detail: e.message }, { status: 500 });
   }
-}
