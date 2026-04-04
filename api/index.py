@@ -236,8 +236,7 @@ async def try_gtts(text: str, lang: str, tld: str) -> bytes:
 
 
 def _adjust_wav_speed(audio_bytes: bytes, speed: float) -> bytes:
-    """Change WAV playback speed by resampling (no ffmpeg needed).
-    Just rewrites the WAV data with a modified sample rate."""
+    """Change WAV playback speed by resampling (no ffmpeg needed)."""
     import wave
     import io as _io
 
@@ -261,6 +260,32 @@ def _adjust_wav_speed(audio_bytes: bytes, speed: float) -> bytes:
         return out.getvalue()
     except Exception as e:
         print(f"WAV speed adjustment failed ({e}), using original audio")
+        return audio_bytes
+
+
+def _adjust_mp3_speed(audio_bytes: bytes, speed: float) -> bytes:
+    """Change MP3 playback speed by resampling using miniaudio (no ffmpeg)."""
+    try:
+        import miniaudio
+        import io as _io
+
+        # Decode MP3 to raw samples
+        samples = miniaudio.decode(audio_bytes, nchannels=1)
+        sample_rate = samples.sample_rate
+        frames = samples.samples
+
+        # Resample at the scaled rate
+        new_rate = int(sample_rate * speed)
+        resampled = miniaudio.resample(frames, sample_rate, new_rate)
+
+        # Encode back to MP3
+        out_buf = miniaudio.encode_mp3(resampled, new_rate, nchannels=1)
+        return bytes(out_buf)
+    except ImportError:
+        print("miniaudio not installed, skipping MP3 speed adjustment")
+        return audio_bytes
+    except Exception as e:
+        print(f"MP3 speed adjustment failed ({e}), using original audio")
         return audio_bytes
 
 
@@ -362,8 +387,9 @@ async def synthesize(req: SynthesizeRequest, request: Request):
         if ext == "wav":
             audio_bytes = _adjust_wav_speed(audio_bytes, req.speed)
             print(f"WAV speed applied: {req.speed}x")
-        else:
-            print("Speed adjustment skipped: MP3 not supported without ffmpeg")
+        elif ext == "mp3":
+            audio_bytes = _adjust_mp3_speed(audio_bytes, req.speed)
+            print(f"MP3 speed applied: {req.speed}x")
         audio_bytes = _adjust_wav_speed(audio_bytes, req.speed)
 
     filename = f"{uuid.uuid4()}.{ext}"
