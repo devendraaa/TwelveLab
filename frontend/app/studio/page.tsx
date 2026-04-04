@@ -84,7 +84,7 @@ export default function StudioPage() {
         return;
       }
 
-      const res = await fetch("/api/tts", {
+      const res = await fetch("/tts", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
