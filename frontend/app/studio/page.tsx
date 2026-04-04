@@ -53,8 +53,10 @@ export default function StudioPage() {
   const isLimit    = error?.includes("limit_exceeded");
 
   useEffect(() => {
+    if (!supabase) return;
     setMounted(true);
     (async () => {
+      if (!supabase) return;
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
       setUser(user);
@@ -66,44 +68,79 @@ export default function StudioPage() {
   }, []);
 
   async function generate() {
-    if (!text.trim() || loading) return;
+    if (!supabase || !text.trim() || loading) return;
+
     setLoading(true);
     setError(null);
     setAudioUrl(null);
     setIsPlaying(false);
-    try {
-      // ← Get session token
-      const { data: { session } } = await supabase.auth.getSession();
 
-      const res = await fetch("/tts", {
-        method: "POST",
-        signal: AbortSignal.timeout(60000),
-        headers: {
-          "Content-Type":  "application/json",
-          "Authorization": `Bearer ${session?.access_token}`,  // ← add this
-        },
+    try {
+      const { data: { user: cu } } = await supabase.auth.getUser();
+
+      const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api";
+
+      console.log("API:", `${API_URL}/synthesize`);
+
+      const res = await fetch(`${API_URL}/synthesize`, {
+        method: "POST", 
+        signal: AbortSignal.timeout(60000), // <-- add here
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text,
           voice_id: voiceId,
           speed,
+          user_id: cu?.id
         }),
       });
 
       if (!res.ok) {
-        const txt = await res.text();
+        const text = await res.text();
         let e;
-        try { e = JSON.parse(txt); } catch { throw new Error(txt || "Server error"); }
+
+        try {
+          e = JSON.parse(text);
+        } catch {
+          throw new Error(text || "Server error");
+        }
+
         if (res.status === 429)
-          throw new Error("limit_exceeded: " + (e.detail?.message || e.error || "Usage limit reached."));
-        throw new Error(e.detail || e.error || "Generation failed");
+          throw new Error("limit_exceeded: " + (e.detail?.message || "Usage limit reached."));
+
+        throw new Error(e.detail || "Generation failed");
       }
 
       const data = await res.json();
-      if (!data.audio_url) throw new Error("Audio URL missing");
+
+      if (!data.audio_url)
+        throw new Error("Audio URL missing");
+
       setAudioUrl(data.audio_url);
-      setCharUsed(p => p + text.length);
-      setGenCount(p => p + 1);
-      setTimeout(() => { audioRef.current?.play(); setIsPlaying(true); }, 100);
+
+      setTimeout(() => {
+        audioRef.current?.play();
+        setIsPlaying(true);
+      }, 100);
+
+      const u = cu;
+
+      if (u) {
+        await supabase.from("generations").insert({
+          user_id: u.id,
+          voice_id: voiceId,
+          text,
+          char_count: text.length,
+          audio_url: data.audio_url
+        });
+
+        await supabase.rpc("increment_char_used", {
+          user_id_input: u.id,
+          amount: text.length
+        });
+
+        setCharUsed(p => p + text.length);
+        setGenCount(p => p + 1);
+      }
 
     } catch (e: any) {
       console.error("Generate error:", e);
@@ -113,7 +150,7 @@ export default function StudioPage() {
     }
   }
 
-  async function logout() { await supabase.auth.signOut(); router.push("/login"); }
+  async function logout() { supabase?.auth.signOut(); router.push("/login"); }
 
   if (!mounted) return null;
 

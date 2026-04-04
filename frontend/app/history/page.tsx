@@ -36,8 +36,10 @@ export default function HistoryPage() {
   const router   = useRouter();
 
   useEffect(() => {
+    if (!supabase) return;
     setMounted(true);
     const init = async () => {
+      if (!supabase) return;
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
       setUser(user);
@@ -49,6 +51,7 @@ export default function HistoryPage() {
   }, []);
 
   async function deleteGeneration(id: string) {
+    if (!supabase) return;
     try {
       await supabase
         .from("generations")
@@ -75,7 +78,7 @@ export default function HistoryPage() {
     }
   }
 
-  async function logout() { await supabase.auth.signOut(); router.push("/login"); }
+  async function logout() { supabase?.auth.signOut(); router.push("/login"); }
 
   const filtered = generations.filter(g =>
     g.text.toLowerCase().includes(search.toLowerCase()) &&
