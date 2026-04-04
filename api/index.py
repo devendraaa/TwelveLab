@@ -327,6 +327,27 @@ async def synthesize(req: SynthesizeRequest, request: Request):
         except Exception as e:
             raise HTTPException(500, f"All TTS engines failed: {e}")
 
+    # Apply speed modification if not 1.0
+    if req.speed != 1.0:
+        try:
+            from pydub import AudioSegment
+            import io
+            if ext == "wav":
+                audio = AudioSegment.from_wav(io.BytesIO(audio_bytes))
+            else:
+                audio = AudioSegment.from_mp3(io.BytesIO(audio_bytes))
+            audio = audio.speedup(playback_speed=req.speed)
+            if ext == "wav":
+                bio = io.BytesIO()
+                audio.export(bio, format="wav")
+                audio_bytes = bio.getvalue()
+            else:
+                bio = io.BytesIO()
+                audio.export(bio, format="mp3")
+                audio_bytes = bio.getvalue()
+        except Exception as e:
+            print(f"Speed adjustment failed ({e}), using original audio")
+
     filename = f"{uuid.uuid4()}.{ext}"
     filepath = OUTPUT_DIR / filename
     filepath.write_bytes(audio_bytes)
