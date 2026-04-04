@@ -56,9 +56,9 @@ export async function POST(req: NextRequest) {
     }
   } catch {}
 
-  // Forward to backend
+  // Forward to backend (Vercel routes /api/* → api/index.py)
   try {
-    const url = `${API_BASE}/synthesize`;
+    const url = `${API_BASE}/api/synthesize`;
     console.log("Calling backend:", url);
     console.log("BACKEND_API_KEY set:", !!process.env.BACKEND_API_KEY);
 
