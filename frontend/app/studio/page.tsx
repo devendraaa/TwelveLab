@@ -100,7 +100,7 @@ export default function StudioPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Geist:wght@300;400;500&display=swap');
+        /* Fonts now loaded in globals.css */
 
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html {
@@ -208,7 +208,7 @@ export default function StudioPage() {
           border:1px solid rgba(255,255,255,0.07);
           background:transparent; cursor:pointer;
           transition:all .2s ease; flex-shrink:0;
-          font-family:'Geist',sans-serif;
+          font-family:var(--font-inter), 'Inter', sans-serif;
         }
         .voice-pill:active { transform:scale(.96); }
 
@@ -217,7 +217,7 @@ export default function StudioPage() {
           width:100%; padding:18px; border-radius:18px;
           background:#c8f060; color:#000; border:none;
           font-size:16px; font-weight:700; letter-spacing:.02em;
-          font-family:'Syne',sans-serif;
+          font-family:'Space Grotesk',var(--font-space-grotesk),sans-serif;
           cursor:pointer; transition:all .2s ease;
           display:flex; align-items:center; justify-content:center; gap:10px;
           position:relative; overflow:hidden;
@@ -239,7 +239,7 @@ export default function StudioPage() {
           border:1px solid rgba(255,255,255,0.08);
           background:transparent; color:rgba(255,255,255,0.38);
           font-size:12px; cursor:pointer; white-space:nowrap;
-          font-family:'Geist',sans-serif; transition:all .15s;
+          font-family:var(--font-inter), 'Inter', sans-serif; transition:all .15s;
           -webkit-tap-highlight-color:transparent;
         }
         .chip:active { transform:scale(.95); }
@@ -250,7 +250,7 @@ export default function StudioPage() {
           width:100%; display:flex; align-items:center; gap:12px;
           padding:12px 16px; border-radius:12px; border:none;
           background:transparent; cursor:pointer;
-          font-family:'Geist',sans-serif; font-size:15px; font-weight:400;
+          font-family:var(--font-inter), 'Inter', sans-serif; font-size:15px; font-weight:400;
           text-align:left; transition:all .15s; color:rgba(255,255,255,0.5);
           -webkit-tap-highlight-color:transparent;
         }
@@ -345,13 +345,13 @@ export default function StudioPage() {
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 5h12M3 9h12M3 13h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
         </button>
 
-        <div style={{ fontFamily:"'Syne',sans-serif", fontSize:"18px", fontWeight:800, letterSpacing:"-0.3px" }}>
+        <div style={{ fontFamily:"'Space Grotesk',var(--font-space-grotesk),sans-serif", fontSize:"18px", fontWeight:800, letterSpacing:"-0.3px" }}>
           Twelve<span style={{ color:"#c8f060" }}>Lab</span>
         </div>
 
         {/* Right: voice indicator + user */}
         <div style={{ display:"flex", alignItems:"center", gap:"8px", flexShrink:0 }}>
-          <div style={{ fontSize:"12px", padding:"5px 11px", borderRadius:"100px", border:`1px solid ${color}30`, color:color, background:`${color}0d`, fontFamily:"'Geist',sans-serif", whiteSpace:"nowrap" }}>
+          <div style={{ fontSize:"12px", padding:"5px 11px", borderRadius:"100px", border:`1px solid ${color}30`, color:color, background:`${color}0d`, fontFamily:"var(--font-inter), 'Inter', sans-serif", whiteSpace:"nowrap" }}>
             {voice.name} · {voice.lang}
           </div>
           <button onClick={() => setUserOpen(!userOpen)} style={{
@@ -388,7 +388,7 @@ export default function StudioPage() {
 
           {/* Page title */}
           <div className="fu" style={{ paddingBottom:"4px" }}>
-            <h1 style={{ fontFamily:"'Syne',sans-serif", fontSize:"clamp(22px,6vw,28px)", fontWeight:800, letterSpacing:"-0.5px", lineHeight:1.1 }}>
+            <h1 style={{ fontFamily:"'Space Grotesk',var(--font-space-grotesk),sans-serif", fontSize:"clamp(22px,6vw,28px)", fontWeight:800, letterSpacing:"-0.5px", lineHeight:1.1 }}>
               Text to Speech
             </h1>
             <p style={{ fontSize:"13px", color:"rgba(255,255,255,0.32)", marginTop:"5px" }}>
@@ -403,7 +403,7 @@ export default function StudioPage() {
                 <div style={{ width:"7px", height:"7px", borderRadius:"50%", background:"#c8f060", animation:"pulse 2.5s ease infinite" }}/>
                 <span style={{ fontSize:"11px", fontWeight:500, color:"rgba(255,255,255,0.4)", letterSpacing:".07em" }}>TEXT INPUT</span>
               </div>
-              <span style={{ fontSize:"12px", color: charCount > 4500 ? "#fb923c" : "rgba(255,255,255,0.2)", fontFamily:"'Geist',sans-serif" }}>
+              <span style={{ fontSize:"12px", color: charCount > 4500 ? "#fb923c" : "rgba(255,255,255,0.2)", fontFamily:"var(--font-inter), 'Inter', sans-serif" }}>
                 {charCount.toLocaleString()} / 5,000
               </span>
             </div>
@@ -415,8 +415,8 @@ export default function StudioPage() {
                 width:"100%", minHeight:"clamp(130px,20vh,200px)",
                 background:"transparent", border:"none",
                 color:"rgba(255,255,255,0.82)", padding:"18px",
-                fontSize:"15px", lineHeight:"1.8", resize:"none",
-                fontFamily:"'Geist',sans-serif", fontWeight:300,
+                fontSize:"16px", lineHeight:"1.8", resize:"none",
+                fontFamily:"var(--font-inter), 'Inter', sans-serif", fontWeight:300,
               }}
             />
 
@@ -451,11 +451,11 @@ export default function StudioPage() {
                     borderColor: voiceId===v.id ? VC[v.id]+"60" : undefined,
                     background:  voiceId===v.id ? VC[v.id]+"12" : undefined,
                   }}>
-                  <div style={{ width:"36px", height:"36px", borderRadius:"50%", flexShrink:0, background:`${VC[v.id]}18`, border:`1px solid ${VC[v.id]}35`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"15px", fontWeight:700, color:VC[v.id], fontFamily:"'Syne',sans-serif" }}>
+                  <div style={{ width:"36px", height:"36px", borderRadius:"50%", flexShrink:0, background:`${VC[v.id]}18`, border:`1px solid ${VC[v.id]}35`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"15px", fontWeight:700, color:VC[v.id], fontFamily:"'Space Grotesk',var(--font-space-grotesk),sans-serif" }}>
                     {v.name[0]}
                   </div>
                   <div style={{ textAlign:"left" }}>
-                    <div style={{ fontSize:"13px", fontWeight:500, color: voiceId===v.id?"#e8e4de":"rgba(255,255,255,0.55)", fontFamily:"'Geist',sans-serif" }}>{v.name}</div>
+                    <div style={{ fontSize:"13px", fontWeight:500, color: voiceId===v.id?"#e8e4de":"rgba(255,255,255,0.55)", fontFamily:"var(--font-inter), 'Inter', sans-serif" }}>{v.name}</div>
                     <div style={{ fontSize:"11px", color:"rgba(255,255,255,0.25)", marginTop:"1px" }}>{v.emoji} {v.lang}</div>
                   </div>
                   {voiceId===v.id && <div style={{ width:"6px", height:"6px", borderRadius:"50%", background:VC[v.id], marginLeft:"auto", flexShrink:0 }}/>}
@@ -467,8 +467,8 @@ export default function StudioPage() {
           {/* Speed — mobile */}
           <div className="card fu d2 voice-row" style={{ display:"none", padding:"16px 18px" }}>
             <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"10px" }}>
-              <span style={{ fontSize:"13px", color:"rgba(255,255,255,0.5)", fontFamily:"'Geist',sans-serif" }}>Speed</span>
-              <span style={{ fontSize:"13px", fontWeight:500, color:"#c8f060", fontFamily:"'Geist',sans-serif" }}>{speed.toFixed(1)}×</span>
+              <span style={{ fontSize:"13px", color:"rgba(255,255,255,0.5)", fontFamily:"var(--font-inter), 'Inter', sans-serif" }}>Speed</span>
+              <span style={{ fontSize:"13px", fontWeight:500, color:"#c8f060", fontFamily:"var(--font-inter), 'Inter', sans-serif" }}>{speed.toFixed(1)}×</span>
             </div>
             <input type="range" min="0.5" max="2" step="0.1" value={speed} onChange={e => setSpeed(parseFloat(e.target.value))}/>
           </div>
@@ -499,14 +499,14 @@ export default function StudioPage() {
               border:`1px solid ${isLimit?"rgba(251,146,60,0.2)":"rgba(239,68,68,0.2)"}`,
               animation:"borderPulse 2s ease infinite",
             }}>
-              <div style={{ fontSize:"14px", fontWeight:600, color:isLimit?"#fb923c":"#fca5a5", marginBottom:"6px", fontFamily:"'Syne',sans-serif" }}>
+              <div style={{ fontSize:"14px", fontWeight:600, color:isLimit?"#fb923c":"#fca5a5", marginBottom:"6px", fontFamily:"'Space Grotesk',var(--font-space-grotesk),sans-serif" }}>
                 {isLimit ? "Usage limit reached" : "Something went wrong"}
               </div>
               <div style={{ fontSize:"13px", color:"rgba(255,255,255,0.45)", lineHeight:"1.6", marginBottom:isLimit?"14px":"0" }}>
                 {error.replace("limit_exceeded: ","")}
               </div>
               {isLimit && (
-                <button onClick={() => router.push("/pricing")} style={{ padding:"10px 24px", borderRadius:"100px", background:"#fb923c", color:"#000", border:"none", fontSize:"13px", fontWeight:700, cursor:"pointer", fontFamily:"'Syne',sans-serif" }}>
+                <button onClick={() => router.push("/pricing")} style={{ padding:"10px 24px", borderRadius:"100px", background:"#fb923c", color:"#000", border:"none", fontSize:"13px", fontWeight:700, cursor:"pointer", fontFamily:"'Space Grotesk',var(--font-space-grotesk),sans-serif" }}>
                   Upgrade plan →
                 </button>
               )}
@@ -515,7 +515,7 @@ export default function StudioPage() {
 
           {/* Audio output */}
           {audioUrl && (
-            <div className="card fu" style={{ borderColor:`${color}20`, animation:"glow 3s ease infinite" }}>
+            <div className="card fu slide-up" style={{ borderColor:`${color}20`, animation:"glow 3s ease infinite" }}>
               <div className="card-header" style={{ borderBottomColor:`${color}15` }}>
                 <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
                   <div style={{ width:"8px", height:"8px", borderRadius:"50%", background:color, animation: isPlaying?"pulse 1.2s ease infinite":"none" }}/>
@@ -523,7 +523,7 @@ export default function StudioPage() {
                     OUTPUT · {voice.name.toUpperCase()} · {voice.lang}
                   </span>
                 </div>
-                <a href={audioUrl} download="twelvelab.mp3" style={{ fontSize:"12px", padding:"5px 14px", borderRadius:"100px", border:`1px solid ${color}30`, color:color, textDecoration:"none", background:`${color}08`, fontFamily:"'Geist',sans-serif", whiteSpace:"nowrap" }}>
+                <a href={audioUrl} download="twelvelab.mp3" style={{ fontSize:"12px", padding:"5px 14px", borderRadius:"100px", border:`1px solid ${color}30`, color:color, textDecoration:"none", background:`${color}08`, fontFamily:"var(--font-inter), 'Inter', sans-serif", whiteSpace:"nowrap" }}>
                   ↓ MP3
                 </a>
               </div>
@@ -574,12 +574,12 @@ export default function StudioPage() {
                     border:`1px solid ${voiceId===v.id?VC[v.id]+"50":"transparent"}`,
                     background: voiceId===v.id?`${VC[v.id]}0e`:"transparent",
                     cursor:"pointer", marginBottom:"2px", transition:"all .15s",
-                    fontFamily:"'Geist',sans-serif",
+                    fontFamily:"var(--font-inter), 'Inter', sans-serif",
                   }}
                   onMouseEnter={e => { if(voiceId!==v.id){ const el=e.currentTarget as HTMLElement; el.style.background="rgba(255,255,255,0.04)"; el.style.borderColor="rgba(255,255,255,0.08)"; } }}
                   onMouseLeave={e => { if(voiceId!==v.id){ const el=e.currentTarget as HTMLElement; el.style.background="transparent"; el.style.borderColor="transparent"; } }}
                 >
-                  <div style={{ width:"32px", height:"32px", borderRadius:"50%", flexShrink:0, background:`${VC[v.id]}18`, border:`1px solid ${VC[v.id]}35`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"13px", fontWeight:700, color:VC[v.id], fontFamily:"'Syne',sans-serif" }}>
+                  <div style={{ width:"32px", height:"32px", borderRadius:"50%", flexShrink:0, background:`${VC[v.id]}18`, border:`1px solid ${VC[v.id]}35`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"13px", fontWeight:700, color:VC[v.id], fontFamily:"'Space Grotesk',var(--font-space-grotesk),sans-serif" }}>
                     {v.name[0]}
                   </div>
                   <div style={{ flex:1 }}>
@@ -596,8 +596,8 @@ export default function StudioPage() {
           <div className="card fu d2" style={{ padding:"16px 18px" }}>
             <div style={{ fontSize:"11px", fontWeight:500, color:"rgba(255,255,255,0.4)", letterSpacing:".07em", marginBottom:"16px" }}>SETTINGS</div>
             <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"10px" }}>
-              <span style={{ fontSize:"13px", color:"rgba(255,255,255,0.5)", fontFamily:"'Geist',sans-serif" }}>Speed</span>
-              <span style={{ fontSize:"13px", fontWeight:500, color:"#c8f060", fontFamily:"'Geist',sans-serif" }}>{speed.toFixed(1)}×</span>
+              <span style={{ fontSize:"13px", color:"rgba(255,255,255,0.5)", fontFamily:"var(--font-inter), 'Inter', sans-serif" }}>Speed</span>
+              <span style={{ fontSize:"13px", fontWeight:500, color:"#c8f060", fontFamily:"var(--font-inter), 'Inter', sans-serif" }}>{speed.toFixed(1)}×</span>
             </div>
             <input type="range" min="0.5" max="2" step="0.1" value={speed} onChange={e => setSpeed(parseFloat(e.target.value))}/>
             <div style={{ display:"flex", justifyContent:"space-between", marginTop:"6px", marginBottom:"20px" }}>
@@ -607,7 +607,7 @@ export default function StudioPage() {
             <div style={{ fontSize:"11px", color:"rgba(255,255,255,0.3)", marginBottom:"10px", letterSpacing:".04em" }}>FORMAT</div>
             <div style={{ display:"flex", gap:"6px" }}>
               {["MP3","WAV","OGG"].map((f,i) => (
-                <div key={f} style={{ flex:1, padding:"8px 0", borderRadius:"10px", textAlign:"center", fontSize:"12px", fontWeight:500, fontFamily:"'Geist',sans-serif", border:`1px solid ${i===0?"rgba(200,240,96,0.3)":"rgba(255,255,255,0.06)"}`, background:i===0?"rgba(200,240,96,0.07)":"transparent", color:i===0?"#c8f060":"rgba(255,255,255,0.2)" }}>
+                <div key={f} style={{ flex:1, padding:"8px 0", borderRadius:"10px", textAlign:"center", fontSize:"12px", fontWeight:500, fontFamily:"var(--font-inter), 'Inter', sans-serif", border:`1px solid ${i===0?"rgba(200,240,96,0.3)":"rgba(255,255,255,0.06)"}`, background:i===0?"rgba(200,240,96,0.07)":"transparent", color:i===0?"#c8f060":"rgba(255,255,255,0.2)" }}>
                   {f}
                   {i>0&&<div style={{ fontSize:"9px", color:"rgba(255,255,255,0.15)", marginTop:"1px" }}>soon</div>}
                 </div>
@@ -617,7 +617,7 @@ export default function StudioPage() {
 
           {/* API card */}
           <div className="fu d3" style={{ background:"rgba(200,240,96,0.03)", border:"1px solid rgba(200,240,96,0.09)", borderRadius:"18px", padding:"16px 18px" }}>
-            <div style={{ fontSize:"12px", fontWeight:600, color:"#c8f060", marginBottom:"6px", fontFamily:"'Syne',sans-serif" }}>REST API</div>
+            <div style={{ fontSize:"12px", fontWeight:600, color:"#c8f060", marginBottom:"6px", fontFamily:"'Space Grotesk',var(--font-space-grotesk),sans-serif" }}>REST API</div>
             <div style={{ fontSize:"12px", color:"rgba(255,255,255,0.3)", lineHeight:"1.7", marginBottom:"12px" }}>Integrate TwelveLab into your app with a single API call.</div>
             <div style={{ background:"rgba(0,0,0,0.35)", borderRadius:"10px", padding:"10px 12px", fontFamily:"monospace", fontSize:"11px", color:"rgba(200,240,96,0.7)", letterSpacing:".02em" }}>
               POST /synthesize

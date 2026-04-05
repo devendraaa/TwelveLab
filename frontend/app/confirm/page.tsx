@@ -59,7 +59,7 @@ export default function ConfirmPage() {
                   onChange={e => setEmail(e.target.value)}
                   required
                   placeholder="you@example.com"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#c8f060]/40 transition-colors placeholder:text-white/20"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-base outline-none focus:border-[#c8f060]/40 transition-colors placeholder:text-white/20"
                 />
               </div>
 

@@ -26,14 +26,14 @@ export default function LoginPage() {
     <main className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
 
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 fade-up">
           <h1 className="text-3xl font-serif text-[#f5f3ee]">
             Twelve<span className="text-[#c8f060]">Lab</span>
           </h1>
-          <p className="text-[#6b6860] text-sm mt-2">Welcome back</p>
+          <p className="text-[#6b6860] text-sm mt-2 fade-up d1">Welcome back</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="border border-white/10 rounded-2xl p-8 bg-white/2">
+        <form onSubmit={handleSubmit} className="border border-white/10 rounded-2xl p-8 bg-white/2 fade-up d2">
           <div className="flex flex-col gap-4">
 
             <div>
@@ -45,7 +45,7 @@ export default function LoginPage() {
                 onChange={e => setEmail(e.target.value)}
                 required
                 placeholder="you@example.com"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#c8f060]/40 transition-colors placeholder:text-white/20"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-base outline-none focus:border-[#c8f060]/40 transition-colors placeholder:text-white/20"
               />
             </div>
 
@@ -58,7 +58,7 @@ export default function LoginPage() {
                 onChange={e => setPassword(e.target.value)}
                 required
                 placeholder="••••••••"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#c8f060]/40 transition-colors placeholder:text-white/20"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-base outline-none focus:border-[#c8f060]/40 transition-colors placeholder:text-white/20"
               />
             </div>
 

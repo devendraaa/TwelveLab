@@ -71,37 +71,29 @@ export default function HistoryPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=Geist:wght@300;400;500;700&display=swap');
-        *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-        html, body { font-family:'DM Sans',sans-serif; background:#080808; overflow-x:hidden; }
-        @keyframes fadeUp  { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes fadeIn  { from{opacity:0} to{opacity:1} }
-        @keyframes slideIn { from{transform:translateX(-100%)} to{transform:translateX(0)} }
-        @keyframes spin    { to{transform:rotate(360deg)} }
-        @keyframes pulse   { 0%,100%{opacity:1} 50%{opacity:.3} }
-        .fade-up { animation:fadeUp .4s ease both; }
-        .d1{animation-delay:.05s} .d2{animation-delay:.1s} .d3{animation-delay:.15s}
-        ::-webkit-scrollbar{width:4px;height:4px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:2px}
-        input::placeholder{color:rgba(255,255,255,0.2)} input:focus{outline:none}
+        /* Fonts loaded from globals.css */
+        @keyframes fadeIn{from{opacity:0} to{opacity:1}}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes pulse{0%,100%{opacity:1} 50%{opacity:.3}}
+        @keyframes shimmer{0%{background-position:200% 0} 100%{background-position:-200% 0}}
         .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:48;backdrop-filter:blur(4px);animation:fadeIn .2s ease}
         .gen-row{background:#0d0d0d;border:1px solid rgba(255,255,255,0.07);border-radius:14px;transition:all .15s}
-        .gen-row:hover{border-color:rgba(255,255,255,0.12);background:rgba(255,255,255,0.02)}
-        .filter-pill{font-size:12px;padding:7px 14px;border-radius:100px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;white-space:nowrap}
-        .action-btn{border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:'DM Sans',sans-serif}
+        .gen-row:hover{border-color:rgba(200,240,96,0.15);background:rgba(200,240,96,0.02)}
+        .gen-row:active{transform:scale(.995)}
+        .filter-pill{font-size:12px;padding:7px 14px;border-radius:100px;border:none;cursor:pointer;transition:all .15s;white-space:nowrap}
+        .filter-pill:active{transform:scale(.95)}
+        .action-btn{border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
         .action-btn:hover{opacity:.8}
-        .nav-item{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;background:transparent;border:none;border-radius:10px;color:rgba(255,255,255,0.55);font-size:14px;font-family:'Geist',sans-serif;cursor:pointer;transition:all .15s;text-align:left}
-        .nav-item:hover{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.85)}
-        .nav-item.active{background:rgba(200,240,96,0.1);color:#c8f060;font-weight:500}
-        .stat-badge{flex:1;text-align:center;padding:8px;background:rgba(255,255,255,0.02);border-radius:8px}
-        .usage-fill{height:100%;border-radius:2px;transition:width .3s}
+        .action-btn:active{transform:scale(.97)}
+        .loading-shimmer{background:linear-gradient(90deg,rgba(255,255,255,0.04) 0%,rgba(255,255,255,0.08) 50%,rgba(255,255,255,0.04) 100%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px}
         .desktop-sidebar{position:fixed;top:0;left:0;bottom:0;width:240px;background:#08080a;border-right:1px solid rgba(255,255,255,0.06);display:flex;flex-direction:column;z-index:40;overflow-y:scroll;scrollbar-width:none}
         .desktop-sidebar::-webkit-scrollbar{display:none}
-        .nav-drawer{position:fixed;top:0;left:0;bottom:0;width:280px;background:#08080a;border-right:1px solid rgba(255,255,255,0.06);z-index:50;display:flex;flex-direction:column;animation:slideIn .3s ease;overflow-y:scroll;scrollbar-width:none}
+        .nav-drawer{position:fixed;top:0;left:0;bottom:0;width:min(280px,85vw);background:#08080a;border-right:1px solid rgba(255,255,255,0.06);z-index:50;display:flex;flex-direction:column;animation:slideInLeft .3s cubic-bezier(.4,0,.2,1);overflow-y:scroll;scrollbar-width:none}
         .nav-drawer::-webkit-scrollbar{display:none}
-        @media(min-width:900px){.hamburger{display:none!important}.main-wrap{margin-left:240px!important;}}
+        @media(min-width:900px){.hamburger{display:none!important}.main-wrap{margin-left:240px!important}}
         @media(max-width:899px){.desktop-sidebar{display:none!important}.main-wrap{margin-left:0!important}}
-        @media(max-width:600px){.stats-grid{grid-template-columns:1fr 1fr!important}.gen-actions{flex-direction:column!important;align-items:flex-start!important}}
-        @media(max-width:400px){.stats-grid{grid-template-columns:1fr!important}}
+        @media(max-width:600px){.stats-grid{grid-template-columns:1fr 1fr!important}.action-row{flex-wrap:wrap!important;gap:6px!important}.action-row>.action-btn{flex:1 1 calc(50% - 6px)!important;min-width:0!important}}
+        @media(max-width:400px){.stats-grid{grid-template-columns:1fr!important}.action-row{flex-direction:column!important}.action-row>.action-btn{width:100%!important}}
       `}</style>
 
       <div style={{ display:"flex", minHeight:"100dvh", background:"#080808", color:"#f0ede8" }}>
@@ -127,15 +119,15 @@ export default function HistoryPage() {
             <button className="hamburger" onClick={() => setSidebarOpen(true)} style={{ background:"rgba(255,255,255,0.06)", border:"none", color:"rgba(255,255,255,0.7)", cursor:"pointer", padding:"8px", borderRadius:"8px", display:"flex", alignItems:"center", flexShrink:0 }}>
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 5h12M3 9h12M3 13h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
             </button>
-            <div style={{ fontFamily:"'Syne',sans-serif", fontSize:"18px", fontWeight:800, flex:1, textAlign:"center" }}>Twelve<span style={{ color:"#c8f060" }}>Lab</span></div>
-            <button onClick={() => router.push("/studio")} style={{ background:"#c8f060", border:"none", color:"#000", cursor:"pointer", padding:"8px 16px", borderRadius:"100px", fontSize:"13px", fontWeight:600, fontFamily:"'Syne',sans-serif", flexShrink:0 }}>+ New</button>
+            <div style={{ fontFamily:"'Space Grotesk',var(--font-space-grotesk),sans-serif", fontSize:"18px", fontWeight:800, flex:1, textAlign:"center" }}>Twelve<span style={{ color:"#c8f060" }}>Lab</span></div>
+            <button onClick={() => router.push("/studio")} style={{ background:"#c8f060", border:"none", color:"#000", cursor:"pointer", padding:"8px 16px", borderRadius:"100px", fontSize:"13px", fontWeight:600, fontFamily:"'Space Grotesk',var(--font-space-grotesk),sans-serif", flexShrink:0 }}>+ New</button>
           </header>
 
           {/* Content */}
           <div style={{ flex:1, padding:"clamp(14px,4vw,28px)", maxWidth:"900px", width:"100%", margin:"0 auto" }}>
 
             <div className="fade-up" style={{ marginBottom:"20px" }}>
-              <h1 style={{ fontFamily:"'Syne',sans-serif", fontSize:"clamp(20px,5vw,26px)", fontWeight:800, letterSpacing:"-0.5px" }}>History</h1>
+              <h1 style={{ fontFamily:"'Space Grotesk',var(--font-space-grotesk),sans-serif", fontSize:"clamp(20px,5vw,26px)", fontWeight:800, letterSpacing:"-0.5px" }}>History</h1>
               <p style={{ fontSize:"13px", color:"rgba(255,255,255,0.35)", marginTop:"3px" }}>All your past generations</p>
             </div>
 
@@ -146,7 +138,7 @@ export default function HistoryPage() {
                 { label:"Voices",      value: uniqueVoices.length },
               ].map(s => (
                 <div key={s.label} style={{ background:"#0d0d0d", border:"1px solid rgba(255,255,255,0.07)", borderRadius:"14px", padding:"14px 16px" }}>
-                  <div style={{ fontFamily:"'Syne',sans-serif", fontSize:"clamp(18px,4vw,24px)", fontWeight:800, letterSpacing:"-0.5px" }}>{s.value}</div>
+                  <div style={{ fontFamily:"'Space Grotesk',var(--font-space-grotesk),sans-serif", fontSize:"clamp(18px,4vw,24px)", fontWeight:800, letterSpacing:"-0.5px" }}>{s.value}</div>
                   <div style={{ fontSize:"11px", color:"rgba(255,255,255,0.35)", marginTop:"3px" }}>{s.label}</div>
                 </div>
               ))}
@@ -154,7 +146,7 @@ export default function HistoryPage() {
 
             <div className="fade-up d2" style={{ marginBottom:"14px" }}>
               <input type="text" placeholder="Search generations…" value={search} onChange={e => setSearch(e.target.value)}
-                style={{ width:"100%", padding:"11px 14px", background:"#0d0d0d", border:"1px solid rgba(255,255,255,0.08)", borderRadius:"12px", color:"rgba(255,255,255,0.8)", fontSize:"14px", fontFamily:"'DM Sans',sans-serif", transition:"border-color .2s" }}
+                style={{ width:"100%", padding:"11px 14px", background:"#0d0d0d", border:"1px solid rgba(255,255,255,0.08)", borderRadius:"12px", color:"rgba(255,255,255,0.8)", fontSize:"16px", fontFamily:"var(--font-inter),'Inter',sans-serif", transition:"border-color .2s" }}
                 onFocus={e => (e.currentTarget as HTMLElement).style.borderColor="rgba(200,240,96,0.35)"}
                 onBlur={e => (e.currentTarget as HTMLElement).style.borderColor="rgba(255,255,255,0.08)"}
               />
@@ -172,20 +164,22 @@ export default function HistoryPage() {
             )}
 
             {loading ? (
-              <div style={{ textAlign:"center", padding:"60px 20px", color:"rgba(255,255,255,0.3)", fontSize:"14px" }}>Loading…</div>
+              <div className="content-wrap" style={{ display:"flex", flexDirection:"column", gap:"10px", padding:"32px 0" }}>
+                {Array.from({length:5}).map((_,i) => <div key={i} className="loading-shimmer fade-up" style={{width:"100%",height:"64px",animationDelay:`${i*0.06}s`}}/>)}
+              </div>
             ) : filtered.length === 0 ? (
               <div style={{ textAlign:"center", padding:"60px 20px", background:"#0d0d0d", border:"1px solid rgba(255,255,255,0.07)", borderRadius:"16px" }}>
                 <div style={{ fontSize:"32px", marginBottom:"12px" }}>🎙</div>
-                <div style={{ fontFamily:"'Syne',sans-serif", fontSize:"18px", fontWeight:700, marginBottom:"8px" }}>{search || filterVoice !== "all" ? "No results" : "No generations yet"}</div>
+                <div style={{ fontFamily:"'Space Grotesk',var(--font-space-grotesk),sans-serif", fontSize:"18px", fontWeight:700, marginBottom:"8px" }}>{search || filterVoice !== "all" ? "No results" : "No generations yet"}</div>
                 <div style={{ fontSize:"14px", color:"rgba(255,255,255,0.35)", marginBottom:"20px" }}>{search || filterVoice !== "all" ? "Try a different filter" : "Go to Studio and generate your first audio"}</div>
-                <button onClick={() => router.push("/studio")} style={{ padding:"10px 24px", borderRadius:"100px", background:"#c8f060", color:"#000", border:"none", fontSize:"13px", fontWeight:600, cursor:"pointer", fontFamily:"'Syne',sans-serif" }}>Go to Studio</button>
+                <button onClick={() => router.push("/studio")} style={{ padding:"10px 24px", borderRadius:"100px", background:"#c8f060", color:"#000", border:"none", fontSize:"13px", fontWeight:600, cursor:"pointer", fontFamily:"'Space Grotesk',var(--font-space-grotesk),sans-serif" }}>Go to Studio</button>
               </div>
             ) : (
               <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
                 {filtered.map((gen, i) => (
-                  <div key={gen.id} className="gen-row fade-up" style={{ padding:"14px 16px", animationDelay:`${i*0.04}s` }}>
+                  <div key={gen.id} className="gen-row slide-left" style={{ padding:"14px 16px", animationDelay:`${i*0.04}s` }}>
                     <div style={{ display:"flex", alignItems:"flex-start", gap:"12px" }}>
-                      <div style={{ width:"38px", height:"38px", borderRadius:"50%", flexShrink:0, background:`${VC[gen.voice_id]||"#888"}18`, border:`1px solid ${VC[gen.voice_id]||"#888"}35`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"14px", fontWeight:700, color:VC[gen.voice_id]||"#888", fontFamily:"'Syne',sans-serif" }}>
+                      <div style={{ width:"38px", height:"38px", borderRadius:"50%", flexShrink:0, background:`${VC[gen.voice_id]||"#888"}18`, border:`1px solid ${VC[gen.voice_id]||"#888"}35`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"14px", fontWeight:700, color:VC[gen.voice_id]||"#888", fontFamily:"'Space Grotesk',var(--font-space-grotesk),sans-serif" }}>
                         {gen.voice_id[0].toUpperCase()}
                       </div>
                       <div style={{ flex:1, minWidth:0 }}>
@@ -201,7 +195,7 @@ export default function HistoryPage() {
                         </div>
                       </div>
                     </div>
-                    <div style={{ display:"flex", gap:"8px", marginTop:"12px", marginLeft:"50px" }}>
+                    <div className="action-row" style={{ display:"flex", gap:"8px", marginTop:"12px", marginLeft:"50px" }}>
                       <button className="action-btn"
                         onClick={() => playing === gen.id ? (audioRef.current?.pause(), setPlaying(null)) : replay(gen)}
                         style={{ flex:1, padding:"9px", borderRadius:"10px", background: playing===gen.id ? "rgba(200,240,96,0.1)" : "rgba(255,255,255,0.05)", border:`1px solid ${playing===gen.id ? "rgba(200,240,96,0.25)" : "rgba(255,255,255,0.08)"}`, color: playing===gen.id ? "#c8f060" : "rgba(255,255,255,0.5)", fontSize:"13px", gap:"6px" }}
@@ -229,12 +223,11 @@ export default function HistoryPage() {
                 ))}
               </div>
             )}
+          </div>
+        </div>
 
-          </div>  
-        </div>  
+        <audio ref={audioRef} onEnded={() => setPlaying(null)} onPause={() => setPlaying(null)} style={{ display:"none" }}/>
       </div>
-
-      <audio ref={audioRef} onEnded={() => setPlaying(null)} style={{ display:"none" }} />  
     </>
   );
-} 
+}

@@ -63,12 +63,12 @@ export default function LandingPage() {
   return (
     <div style={{ background: "#050505", color: "#f0ede8", minHeight: "100dvh", fontFamily: "'Geist', 'Inter', system-ui, sans-serif" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Inter:wght@300;400;500;600&display=swap');
-        *:where(:not(html, body, a, button, svg *)) { box-sizing: border-box; margin: 0; padding: 0; }
         @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
         @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
         @keyframes fadeIn { from{opacity:0} to{opacity:1} }
         @keyframes glowPulse { 0%,100%{opacity:.4} 50%{opacity:.7} }
+        @keyframes gradientShift { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+        @keyframes scaleIn { from{opacity:0;transform:scale(.95)} to{opacity:1;transform:scale(1)} }
         .fade-up { animation: fadeUp .6s ease both; }
         .d1 { animation-delay: .1s; }
         .d2 { animation-delay: .2s; }
@@ -76,6 +76,7 @@ export default function LandingPage() {
         .d4 { animation-delay: .4s; }
         .d5 { animation-delay: .5s; }
         .float { animation: float 4s ease-in-out infinite; }
+        .scale-in { animation: scaleIn .4s ease both; }
         .voice-card { transition: all .2s; }
         .voice-card:hover { border-color: rgba(200,240,96,0.2) !important; background: rgba(200,240,96,0.03) !important; transform: translateY(-2px); }
         .feat-card { transition: all .25s; }
@@ -86,6 +87,7 @@ export default function LandingPage() {
         .btn-secondary:hover { border-color: rgba(255,255,255,0.25) !important; color: rgba(255,255,255,0.9) !important; }
         .cta-link { transition: all .2s; }
         .cta-link:hover { color: #d4f570 !important; }
+        @media (max-width:480px){ .hero-btns{flex-direction:column} .hero-btns a{width:100%;text-align:center} .foot-row{flex-direction:column!important;align-items:center!important;text-align:center} .voice-grid{grid-template-columns:1fr!important} }
       `}</style>
 
       {/* ── NAV ──────────────────────────────────────────── */}
@@ -96,7 +98,7 @@ export default function LandingPage() {
         background: "rgba(5,5,5,0.85)", backdropFilter: "blur(16px)",
         borderBottom: "1px solid rgba(255,255,255,0.06)",
       }}>
-        <div style={{ fontFamily: "'Syne',sans-serif", fontSize: "20px", fontWeight: 800, letterSpacing: "-0.5px" }}>
+        <div style={{ fontFamily: "'Space Grotesk',var(--font-space-grotesk),sans-serif", fontSize: "20px", fontWeight: 800, letterSpacing: "-0.5px" }}>
           Twelve<span style={{ color: "#c8f060" }}>Lab</span>
         </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
@@ -123,7 +125,7 @@ export default function LandingPage() {
       <section style={{
         display: "flex", flexDirection: "column", alignItems: "center",
         textAlign: "center",
-        padding: "clamp(60px, 15vh, 140px) clamp(20px, 6vw, 80px) clamp(40px, 8vh, 80px)",
+        padding: "clamp(50px, 15vh, 140px) clamp(16px, 5vw, 80px) clamp(40px, 8vh, 80px)",
         position: "relative", overflow: "hidden",
       }}>
         {/* Gradient backdrop */}
@@ -135,7 +137,7 @@ export default function LandingPage() {
           pointerEvents: "none",
         }}/>
 
-        <div className="fade-up" style={{
+        <div className="fade-up scale-in" style={{
           display: "inline-flex", alignItems: "center", gap: "8px",
           padding: "6px 6px 6px 14px", borderRadius: "100px",
           background: "rgba(200,240,96,0.06)", border: "1px solid rgba(200,240,96,0.15)",
@@ -149,7 +151,7 @@ export default function LandingPage() {
         </div>
 
         <h1 className="fade-up d1" style={{
-          fontFamily: "'Syne',sans-serif",
+          fontFamily: "'Space Grotesk',sans-serif",
           fontSize: "clamp(36px, 8vw, 72px)",
           fontWeight: 800, lineHeight: 1.05,
           letterSpacing: "-1.5px",
@@ -159,8 +161,10 @@ export default function LandingPage() {
           Text to speech that
           <br/>
           <span style={{
-            background: "linear-gradient(135deg, #c8f060 0%, #7fc22a 100%)",
+            background: "linear-gradient(135deg, #c8f060 0%, #7fc22a 50%, #c8f060 100%)",
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+            backgroundSize: "200% 200%",
+            animation: "gradientShift 4s ease infinite",
           }}>actually sounds human</span>
         </h1>
 
@@ -173,11 +177,11 @@ export default function LandingPage() {
           Studio-ready API with speed control, usage tracking, and one-click downloads.
         </p>
 
-        <div className="fade-up d3" style={{ display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center" }}>
+        <div className="fade-up d3 hero-btns" style={{ display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center" }}>
           <Link href="/studio" className="btn-primary" style={{
             padding: "16px 36px", borderRadius: "100px",
             background: "#c8f060", color: "#000",
-            fontSize: "16px", fontWeight: 700, fontFamily: "'Syne',sans-serif",
+            fontSize: "16px", fontWeight: 700, fontFamily: "'Space Grotesk',sans-serif",
             textDecoration: "none", transition: "all .2s",
             boxShadow: "0 0 32px rgba(200,240,96,0.15)",
           }}>
@@ -207,7 +211,7 @@ export default function LandingPage() {
             background: "rgba(255,255,255,0.02)",
           }}>
             <div style={{
-              fontFamily: "'Syne',sans-serif", fontSize: "clamp(24px, 4vw, 36px)",
+              fontFamily: "'Space Grotesk',sans-serif", fontSize: "clamp(24px, 4vw, 36px)",
               fontWeight: 800, color: "#c8f060", letterSpacing: "-1px",
             }}>{s.value}</div>
             <div style={{
@@ -230,15 +234,15 @@ export default function LandingPage() {
             fontWeight: 600, marginBottom: "10px",
           }}>Voice Library</div>
           <h2 style={{
-            fontFamily: "'Syne',sans-serif",
+            fontFamily: "'Space Grotesk',sans-serif",
             fontSize: "clamp(24px, 5vw, 40px)", fontWeight: 800,
             letterSpacing: "-1px",
           }}>Every voice, every language</h2>
         </div>
 
-        <div className="fade-up d1" style={{
+        <div className="fade-up d1 voice-grid" style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
           gap: "12px",
         }}>
           {voices.map(v => (
@@ -256,7 +260,7 @@ export default function LandingPage() {
                 border: "1px solid rgba(200,240,96,0.15)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: "18px", fontWeight: 700, color: "#c8f060",
-                fontFamily: "'Syne',sans-serif", flexShrink: 0,
+                fontFamily: "'Space Grotesk',sans-serif", flexShrink: 0,
               }}>
                 {v.name[0]}
               </div>
@@ -294,7 +298,7 @@ export default function LandingPage() {
             fontWeight: 600, marginBottom: "10px",
           }}>Why TwelveLab</div>
           <h2 style={{
-            fontFamily: "'Syne',sans-serif",
+            fontFamily: "'Space Grotesk',sans-serif",
             fontSize: "clamp(24px, 5vw, 40px)", fontWeight: 800,
             letterSpacing: "-1px",
           }}>Built for developers and creators</h2>
@@ -344,7 +348,7 @@ export default function LandingPage() {
             fontWeight: 600, marginBottom: "10px",
           }}>REST API</div>
           <h2 style={{
-            fontFamily: "'Syne',sans-serif",
+            fontFamily: "'Space Grotesk',sans-serif",
             fontSize: "clamp(20px, 4vw, 32px)", fontWeight: 800,
             letterSpacing: "-1px", marginBottom: "12px",
           }}>One call. That's it.</h2>
@@ -389,7 +393,7 @@ Content-Type: application/json
       }}>
         <div className="fade-up">
           <h2 style={{
-            fontFamily: "'Syne',sans-serif",
+            fontFamily: "'Space Grotesk',sans-serif",
             fontSize: "clamp(24px, 5vw, 44px)", fontWeight: 800,
             letterSpacing: "-1px", marginBottom: "16px",
           }}>
@@ -406,7 +410,7 @@ Content-Type: application/json
             padding: "18px 40px", borderRadius: "100px",
             background: "#c8f060", color: "#000",
             fontSize: "17px", fontWeight: 700,
-            fontFamily: "'Syne',sans-serif",
+            fontFamily: "'Space Grotesk',sans-serif",
             textDecoration: "none", transition: "all .2s",
             boxShadow: "0 0 40px rgba(200,240,96,0.15)",
           }}>
@@ -424,7 +428,7 @@ Content-Type: application/json
         fontSize: "12px", color: "rgba(255,255,255,0.25)",
       }}>
         <div>
-          <span style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.4)" }}>
+          <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.4)" }}>
             Twelve<span style={{ color: "#c8f060" }}>Lab</span>
           </span>
           {" "}Text-to-speech platform
