@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { DesktopSidebar, MobileDrawer } from "@/components/sidebar";
-import type { Generation } from "@/lib/types";
+import type { Generation, ClonedVoice } from "@/lib/types";
 import { VC } from "@/lib/voices";
 
 const VOICE_LANG: Record<string, string> = {
@@ -29,13 +29,24 @@ export default function HistoryPage() {
   const [search,      setSearch]      = useState("");
   const [filterVoice, setFilterVoice] = useState("all");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [clonedVoices, setClonedVoices] = useState<ClonedVoice[]>([]);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  function getVoiceNameForGeneration(voiceId: string): { name: string; color: string; lang: string } {
+    const cv = clonedVoices.find(v => v.id === voiceId);
+    if (cv && cv.status === "ready") return { name: cv.name, color: "#a78bfa", lang: "Custom" };
+    return { name: VOICE_LANG[voiceId] ? voiceId : voiceId.slice(0, 8), color: VC[voiceId] || "#888", lang: VOICE_LANG[voiceId] || "" };
+  }
 
   useEffect(() => {
     if (!mounted || !supabase || !user) return;
     (async () => {
-      const { data } = await supabase.from("generations").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
-      setGenerations(data || []);
+      const [genRes, cvRes] = await Promise.all([
+        supabase.from("generations").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("cloned_voices").select("*").eq("user_id", user.id),
+      ]);
+      setGenerations(genRes.data || []);
+      setClonedVoices((cvRes.data || []) as ClonedVoice[]);
       setLoading(false);
     })();
   }, [mounted, user]);
