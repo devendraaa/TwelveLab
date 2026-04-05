@@ -1,4 +1,6 @@
+"use client";
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 
 export default function LandingPage() {
   const voices = [
@@ -60,6 +62,18 @@ export default function LandingPage() {
     { value: "99.9%", label: "Uptime" },
   ];
 
+  useEffect(() => {
+    // Feature cards: track mouse for radial gradient highlight
+    const cards = document.querySelectorAll<HTMLElement>(".feat-card");
+    cards.forEach(card => {
+      card.onmousemove = (e) => {
+        const r = card.getBoundingClientRect();
+        card.style.setProperty("--mx", `${((e.clientX - r.left) / r.width) * 100}%`);
+        card.style.setProperty("--my", `${((e.clientY - r.top) / r.height) * 100}%`);
+      };
+    });
+  }, []);
+
   return (
     <div style={{ background: "#050505", color: "#f0ede8", minHeight: "100dvh", fontFamily: "'Geist', 'Inter', system-ui, sans-serif" }}>
       <style>{`
@@ -69,6 +83,13 @@ export default function LandingPage() {
         @keyframes glowPulse { 0%,100%{opacity:.4} 50%{opacity:.7} }
         @keyframes gradientShift { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
         @keyframes scaleIn { from{opacity:0;transform:scale(.95)} to{opacity:1;transform:scale(1)} }
+        @keyframes waveMove1 { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+        @keyframes waveMove2 { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+        @keyframes waveMove3 { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+        @keyframes orbFloat1 { 0%,100%{transform:translate(0,0) scale(1)} 25%{transform:translate(30px,-40px) scale(1.05)} 50%{transform:translate(-20px,-70px) scale(.95)} 75%{transform:translate(-40px,-20px) scale(1.02)} }
+        @keyframes orbFloat2 { 0%,100%{transform:translate(0,0) scale(1)} 25%{transform:translate(-50px,20px) scale(1.03)} 50%{transform:translate(30px,-50px) scale(.97)} 75%{transform:translate(40px,30px) scale(1.05)} }
+        @keyframes orbFloat3 { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(60px,30px) scale(1.04)} 66%{transform:translate(-30px,-60px) scale(.96)} }
+        @keyframes dash { to{stroke-dashoffset:0} }
         .fade-up { animation: fadeUp .6s ease both; }
         .d1 { animation-delay: .1s; }
         .d2 { animation-delay: .2s; }
@@ -87,7 +108,13 @@ export default function LandingPage() {
         .btn-secondary:hover { border-color: rgba(255,255,255,0.25) !important; color: rgba(255,255,255,0.9) !important; }
         .cta-link { transition: all .2s; }
         .cta-link:hover { color: #d4f570 !important; }
-        @media (max-width:480px){ .hero-btns{flex-direction:column} .hero-btns a{width:100%;text-align:center} .foot-row{flex-direction:column!important;align-items:center!important;text-align:center} .voice-grid{grid-template-columns:1fr!important} }
+        @media (max-width:480px){ .hero-btns{flex-direction:column} .hero-btns a{width:100%;text-align:center} .foot-row{flex-direction:column!important;align-items:center!important;text-align:center} .voice-grid{grid-template-columns:1fr!important} .hero-waves{display:none!important} }
+        .feat-card { position:relative; overflow:hidden; }
+        .feat-card::before { content:""; position:absolute; top:-1px; left:-1px; right:-1px; bottom:-1px; border-radius:21px; padding:1px; background:linear-gradient(135deg, rgba(200,240,96,0.15) 0%, transparent 40%, transparent 60%, rgba(200,240,96,0.15) 100%); -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite:xor; mask-composite:exclude; opacity:0; transition:opacity .3s; }
+        .feat-card:hover::before { opacity:1; }
+        .feat-card::after { content:""; position:absolute; inset:0; background:radial-gradient(circle at var(--mx,50%) var(--my,50%), rgba(200,240,96,0.06) 0%, transparent 60%); opacity:0; transition:opacity .3s; pointer-events:none; }
+        .feat-card:hover::after { opacity:1; }
+        .hero-stat-val { background:linear-gradient(135deg, #c8f060, #7fc22a); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-size:200% 200%; animation:gradientShift 3s ease infinite; }
       `}</style>
 
       {/* ── NAV ──────────────────────────────────────────── */}
@@ -128,14 +155,39 @@ export default function LandingPage() {
         padding: "clamp(50px, 15vh, 140px) clamp(16px, 5vw, 80px) clamp(40px, 8vh, 80px)",
         position: "relative", overflow: "hidden",
       }}>
-        {/* Gradient backdrop */}
-        <div style={{
-          position: "absolute", top: "-40%", left: "50%", transform: "translateX(-50%)",
-          width: "600px", height: "600px", borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(200,240,96,0.08) 0%, transparent 70%)",
-          animation: "glowPulse 6s ease-in-out infinite",
-          pointerEvents: "none",
-        }}/>
+        {/* Subtle dot grid background */}
+        <div style={{ position:"absolute", inset:0, opacity:.04, pointerEvents:"none", backgroundImage:"radial-gradient(circle, rgba(255,255,255,.5) 1px, transparent 1px)", backgroundSize:"24px 24px" }}/>
+
+        {/* Floating orbs */}
+        <div style={{ position:"absolute", width:"500px", height:"500px", top:"-15%", right:"-10%", borderRadius:"50%", background:"radial-gradient(circle, rgba(200,240,96,0.12) 0%, transparent 70%)", animation:"orbFloat1 18s ease-in-out infinite", pointerEvents:"none", filter:"blur(40px)" }}/>
+        <div style={{ position:"absolute", width:"400px", height:"400px", bottom:"-10%", left:"-8%", borderRadius:"50%", background:"radial-gradient(circle, rgba(96,165,250,0.08) 0%, transparent 70%)", animation:"orbFloat2 22s ease-in-out infinite", pointerEvents:"none", filter:"blur(40px)" }}/>
+        <div style={{ position:"absolute", width:"350px", height:"350px", top:"30%", left:"50%", borderRadius:"50%", background:"radial-gradient(circle, rgba(167,139,250,0.06) 0%, transparent 70%)", animation:"orbFloat3 20s ease-in-out infinite", pointerEvents:"none", filter:"blur(30px)" }}/>
+
+        {/* Animated sound waves — desktop only */}
+        <div className="hero-waves" style={{ position:"absolute", bottom:0, left:0, right:0, height:"120px", overflow:"hidden", pointerEvents:"none" }}>
+          <svg width="200%" height="120" preserveAspectRatio="none" viewBox="0 0 2400 120" fill="none" style={{ position:"absolute", bottom:0 }}>
+            {/* Wave 1 — accent */}
+            <g style={{ animation:"waveMove1 8s linear infinite" }}>
+              <path d="M0 60 Q 150 20 300 60 T 600 60 T 900 60 T 1200 60 T 1500 60 T 1800 60 T 2100 60 T 2400 60" stroke="rgba(200,240,96,0.15)" strokeWidth="1.5" fill="none" opacity=".7"/>
+              <path d="M0 60 Q 150 20 300 60 T 600 60 T 900 60 T 1200 60 T 1500 60 T 1800 60 T 2100 60 T 2400 60" stroke="rgba(200,240,96,0.15)" strokeWidth="1.5" fill="none" opacity=".7"/>
+              <path d="M0 72 Q 150 40 300 72 T 600 72 T 900 72 T 1200 72 T 1500 72 T 1800 72 T 2100 72 T 2400 72" stroke="rgba(200,240,96,0.08)" strokeWidth="1" fill="none" opacity=".5"/>
+            </g>
+          </svg>
+          <svg width="200%" height="120" preserveAspectRatio="none" viewBox="0 0 2400 120" fill="none" style={{ position:"absolute", bottom:0 }}>
+            {/* Wave 2 — blue */}
+            <g style={{ animation:"waveMove2 12s linear infinite reverse" }}>
+              <path d="M0 80 Q 200 40 400 80 T 800 80 T 1200 80 T 1600 80 T 2000 80 T 2400 80" stroke="rgba(96,165,250,0.1)" strokeWidth="1" fill="none" opacity=".6"/>
+              <path d="M0 80 Q 200 40 400 80 T 800 80 T 1200 80 T 1600 80 T 2000 80 T 2400 80" stroke="rgba(96,165,250,0.1)" strokeWidth="1" fill="none" opacity=".6"/>
+            </g>
+          </svg>
+          <svg width="200%" height="120" preserveAspectRatio="none" viewBox="0 0 2400 120" fill="none" style={{ position:"absolute", bottom:0 }}>
+            {/* Wave 3 — purple */}
+            <g style={{ animation:"waveMove3 15s linear infinite" }}>
+              <path d="M0 95 Q 250 60 500 95 T 1000 95 T 1500 95 T 2000 95 T 2400 95" stroke="rgba(167,139,250,0.06)" strokeWidth="1" fill="none" opacity=".4"/>
+              <path d="M0 95 Q 250 60 500 95 T 1000 95 T 1500 95 T 2000 95 T 2400 95" stroke="rgba(167,139,250,0.06)" strokeWidth="1" fill="none" opacity=".4"/>
+            </g>
+          </svg>
+        </div>
 
         <div className="fade-up scale-in" style={{
           display: "inline-flex", alignItems: "center", gap: "8px",
@@ -210,9 +262,9 @@ export default function LandingPage() {
             textAlign: "center", padding: "24px",
             background: "rgba(255,255,255,0.02)",
           }}>
-            <div style={{
+            <div className="hero-stat-val" style={{
               fontFamily: "'Space Grotesk',sans-serif", fontSize: "clamp(24px, 4vw, 36px)",
-              fontWeight: 800, color: "#c8f060", letterSpacing: "-1px",
+              fontWeight: 800, letterSpacing: "-1px",
             }}>{s.value}</div>
             <div style={{
               fontSize: "12px", color: "rgba(255,255,255,0.3)",
