@@ -1,7 +1,7 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { VOICES, SAMPLES, VC } from "@/lib/voices";
 import { useAuth } from "@/hooks/use-auth";
 import { DesktopSidebar, MobileDrawer } from "@/components/sidebar";
@@ -19,7 +19,6 @@ const DURATIONS = ["15s", "30s", "60s"];
 export default function StudioPage() {
   const { user, mounted, logout } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [clonedVoices, setClonedVoices] = useState<ClonedVoice[]>([]);
 
   const [text,        setText]        = useState(SAMPLES["Podcast"]);
@@ -40,7 +39,14 @@ export default function StudioPage() {
   const [scriptLang, setScriptLang] = useState("EN");
   const [duration, setDuration] = useState("30s");
   const [genScriptLoading, setGenScriptLoading] = useState(false);
+  const [isCSR, setIsCSR] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  useEffect(() => {
+    setIsCSR(true);
+  }, []);
+
+  const voiceParam = isCSR ? new URLSearchParams(window.location.search).get("voice") : null;
 
   const isCloned = voiceId.startsWith("cloned-");
   const clonedVoice = isCloned ? clonedVoices.find(v => v.id === voiceId.replace("cloned-", "")) : null;
@@ -63,8 +69,6 @@ export default function StudioPage() {
       // Load cloned voices
       const { data: cvData } = await supabase.from("cloned_voices").select("*").eq("user_id", user.id).eq("status", "ready").order("created_at", { ascending: false });
       if (cvData) setClonedVoices(cvData as ClonedVoice[]);
-      // Check URL params for pre-selected voice
-      const voiceParam = searchParams.get("voice");
       if (voiceParam) {
         setVoiceId(`cloned-${voiceParam}`);
       }
