@@ -6,12 +6,16 @@ type SidebarProps = {
   charUsed: number;
   charLimit: number;
   genCount: number;
-  activeRoute: "studio" | "history";
+  activeRoute: "studio" | "history" | "clone";
   onLogout: () => void;
 };
 
 const ActiveIcon = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="5.5" y="1.5" width="5" height="8" rx="2.5" stroke="currentColor" strokeWidth="1.4"/><path d="M3 8a5 5 0 0 0 10 0" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><line x1="8" y1="13" x2="8" y2="15" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
+);
+
+const CloneIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 2H4a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h1.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/><path d="M6 14h2a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2Z" stroke="currentColor" strokeWidth="1.4"/><path d="M8 3V1m-3 2V1m6 2V1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
 );
 
 const HistoryIcon = () => (
