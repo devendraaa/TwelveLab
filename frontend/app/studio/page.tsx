@@ -80,7 +80,7 @@ export default function StudioPage() {
     setGenScriptLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/script", {
+      const res = await fetch("/generate-script", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ topic: topic.trim(), language: scriptLang, duration }),
