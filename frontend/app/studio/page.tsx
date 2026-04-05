@@ -10,6 +10,7 @@ import type { ClonedVoice } from "@/lib/types";
 const LANGUAGES = [
   { code: "EN", label: "English" },
   { code: "HI", label: "हिन्दी (Hindi)" },
+  { code: "MR", label: "मराठी (Marathi)" },
   { code: "ES", label: "Español" },
   { code: "DE", label: "Deutsch" },
   { code: "FR", label: "Français" },
