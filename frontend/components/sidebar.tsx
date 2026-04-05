@@ -28,7 +28,7 @@ export function DesktopSidebar({ user, charUsed, charLimit, genCount, activeRout
   ];
 
   return (
-    <aside className="desktop-sidebar" style={{ fontFamily: "'Geist',sans-serif" }}>
+    <aside className="desktop-sidebar">
       <div style={{ padding: "24px 20px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <div style={{ fontFamily: "'Syne',sans-serif", fontSize: "20px", fontWeight: 800, letterSpacing: "-0.5px" }}>
           Twelve<span style={{ color: "#c8f060" }}>Lab</span>
@@ -40,9 +40,8 @@ export function DesktopSidebar({ user, charUsed, charLimit, genCount, activeRout
         {navItems.map(item => (
           <button
             key={item.label}
-            className={`nav-item ${item.active ? "active" : ""}`}
+            className={`nav-item${item.active ? " active" : ""}`}
             onClick={() => router.push(item.route)}
-            style={{ marginBottom: "2px" }}
           >
             {item.icon}
             {item.label}
@@ -120,9 +119,8 @@ export function MobileDrawer({ user, charUsed, charLimit, activeRoute, onLogout,
           {navItems.map(item => (
             <button
               key={item.label}
-              className={`nav-item ${item.active ? "active" : ""}`}
+              className={`nav-item${item.active ? " active" : ""}`}
               onClick={() => { router.push(item.route); onClose(); }}
-              style={{ marginBottom: "3px", fontSize: "15px" }}
             >
               {item.label}
             </button>

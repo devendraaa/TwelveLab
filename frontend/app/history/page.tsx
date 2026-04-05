@@ -8,7 +8,7 @@ import type { Generation } from "@/lib/types";
 import { VC } from "@/lib/voices";
 
 const VOICE_LANG: Record<string, string> = {
-  aria: "EN", ryan: "EN", priya: "HI", sofia: "ES", lena: "DE", pierre: "FR",
+  aria: "EN", ryan: "EN", priya: "HI", aisha: "MR", sofia: "ES", lena: "DE", pierre: "FR",
 };
 
 function timeAgo(d: string) {
@@ -71,7 +71,7 @@ export default function HistoryPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=Geist:wght@300;400;500;700&display=swap');
         *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
         html, body { font-family:'DM Sans',sans-serif; background:#080808; overflow-x:hidden; }
         @keyframes fadeUp  { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
@@ -89,8 +89,17 @@ export default function HistoryPage() {
         .filter-pill{font-size:12px;padding:7px 14px;border-radius:100px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;white-space:nowrap}
         .action-btn{border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:'DM Sans',sans-serif}
         .action-btn:hover{opacity:.8}
+        .nav-item{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;background:transparent;border:none;border-radius:10px;color:rgba(255,255,255,0.55);font-size:14px;font-family:'Geist',sans-serif;cursor:pointer;transition:all .15s;text-align:left}
+        .nav-item:hover{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.85)}
+        .nav-item.active{background:rgba(200,240,96,0.1);color:#c8f060;font-weight:500}
+        .stat-badge{flex:1;text-align:center;padding:8px;background:rgba(255,255,255,0.02);border-radius:8px}
+        .usage-fill{height:100%;border-radius:2px;transition:width .3s}
+        .desktop-sidebar{position:fixed;top:0;left:0;bottom:0;width:240px;background:#08080a;border-right:1px solid rgba(255,255,255,0.06);display:flex;flex-direction:column;z-index:40;overflow-y:scroll;scrollbar-width:none}
+        .desktop-sidebar::-webkit-scrollbar{display:none}
+        .nav-drawer{position:fixed;top:0;left:0;bottom:0;width:280px;background:#08080a;border-right:1px solid rgba(255,255,255,0.06);z-index:50;display:flex;flex-direction:column;animation:slideIn .3s ease;overflow-y:scroll;scrollbar-width:none}
+        .nav-drawer::-webkit-scrollbar{display:none}
         @media(min-width:900px){.hamburger{display:none!important}.main-wrap{margin-left:240px!important;}}
-        @media(max-width:899px){.sidebar-desktop{display:none!important}.main-wrap{margin-left:0!important}}
+        @media(max-width:899px){.desktop-sidebar{display:none!important}.main-wrap{margin-left:0!important}}
         @media(max-width:600px){.stats-grid{grid-template-columns:1fr 1fr!important}.gen-actions{flex-direction:column!important;align-items:flex-start!important}}
         @media(max-width:400px){.stats-grid{grid-template-columns:1fr!important}}
       `}</style>
@@ -220,11 +229,12 @@ export default function HistoryPage() {
                 ))}
               </div>
             )}
-          </div>
-        </div>
 
-        <audio ref={audioRef} onEnded={() => setPlaying(null)} onPause={() => setPlaying(null)} style={{ display:"none" }}/>
+          </div>  
+        </div>  
       </div>
+
+      <audio ref={audioRef} onEnded={() => setPlaying(null)} style={{ display:"none" }} />  
     </>
   );
-}
+} 
