@@ -1,14 +1,26 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { VOICES, SAMPLES, VC } from "@/lib/voices";
 import { useAuth } from "@/hooks/use-auth";
 import { DesktopSidebar, MobileDrawer } from "@/components/sidebar";
+import type { ClonedVoice } from "@/lib/types";
+
+const LANGUAGES = [
+  { code: "EN", label: "English" },
+  { code: "HI", label: "हिन्दी (Hindi)" },
+  { code: "ES", label: "Español" },
+  { code: "DE", label: "Deutsch" },
+  { code: "FR", label: "Français" },
+];
+const DURATIONS = ["15s", "30s", "60s"];
 
 export default function StudioPage() {
   const { user, mounted, logout } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [clonedVoices, setClonedVoices] = useState<ClonedVoice[]>([]);
 
   const [text,        setText]        = useState(SAMPLES["Podcast"]);
   const [voiceId,     setVoiceId]     = useState("aria");
@@ -22,23 +34,63 @@ export default function StudioPage() {
   const [navOpen,     setNavOpen]     = useState(false);
   const [userOpen,    setUserOpen]    = useState(false);
   const [genCount,    setGenCount]    = useState(0);
+  // Script AI mode
+  const [scriptMode, setScriptMode] = useState(false);
+  const [topic, setTopic] = useState("");
+  const [scriptLang, setScriptLang] = useState("EN");
+  const [duration, setDuration] = useState("30s");
+  const [genScriptLoading, setGenScriptLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  const isCloned = voiceId.startsWith("cloned-");
+  const clonedVoice = isCloned ? clonedVoices.find(v => v.id === voiceId.replace("cloned-", "")) : null;
 
   const charCount  = text.length;
   const usagePct   = Math.min((charUsed / charLimit) * 100, 100);
-  const voice      = VOICES.find(v => v.id === voiceId)!;
-  const color      = VC[voiceId];
+  const builtInVoice = !isCloned ? VOICES.find(v => v.id === voiceId) : null;
+  const voiceName  = clonedVoice?.name || builtInVoice?.name || voiceId;
+  const voiceLang  = builtInVoice?.lang || "Custom";
+  const color      = isCloned ? "#a78bfa" : (VC[voiceId] || "#888");
   const isLimit    = error?.includes("limit_exceeded");
 
   useEffect(() => {
     if (!mounted || !supabase || !user) return;
     (async () => {
-      const { data } = await supabase.from("users").select("char_used").eq("id", user.id).single();
-      if (data) setCharUsed(data.char_used || 0);
+      const { data: userData } = await supabase.from("users").select("char_used").eq("id", user.id).single();
+      if (userData) setCharUsed(userData.char_used || 0);
       const { count } = await supabase.from("generations").select("*", { count:"exact", head:true }).eq("user_id", user.id);
       setGenCount(count || 0);
+      // Load cloned voices
+      const { data: cvData } = await supabase.from("cloned_voices").select("*").eq("user_id", user.id).eq("status", "ready").order("created_at", { ascending: false });
+      if (cvData) setClonedVoices(cvData as ClonedVoice[]);
+      // Check URL params for pre-selected voice
+      const voiceParam = searchParams.get("voice");
+      if (voiceParam) {
+        setVoiceId(`cloned-${voiceParam}`);
+      }
     })();
   }, [mounted, user]);
+
+  async function generateScript() {
+    if (!topic.trim() || genScriptLoading) return;
+    setGenScriptLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/script", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic: topic.trim(), language: scriptLang, duration }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to generate script");
+      setText(data.script);
+    } catch (e: any) {
+      console.error("Script generation error:", e);
+      setError(e.message);
+    } finally {
+      setGenScriptLoading(false);
+    }
+  }
 
   async function generate() {
     if (!supabase || !text.trim() || loading) return;
@@ -57,13 +109,14 @@ export default function StudioPage() {
         return;
       }
 
+      const effectiveVoice = isCloned ? (clonedVoice?.voice_path || clonedVoice?.id || voiceId) : voiceId;
       const res = await fetch("/tts", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
         },
-        body: JSON.stringify({ text, voice_id: voiceId, speed }),
+        body: JSON.stringify({ text, voice_id: effectiveVoice, speed, is_cloned: isCloned }),
       });
 
       const data = await res.json();
@@ -352,7 +405,7 @@ export default function StudioPage() {
         {/* Right: voice indicator + user */}
         <div style={{ display:"flex", alignItems:"center", gap:"8px", flexShrink:0 }}>
           <div style={{ fontSize:"12px", padding:"5px 11px", borderRadius:"100px", border:`1px solid ${color}30`, color:color, background:`${color}0d`, fontFamily:"var(--font-inter), 'Inter', sans-serif", whiteSpace:"nowrap" }}>
-            {voice.name} · {voice.lang}
+            {voiceName}{isCloned ? " " : " · "}{isCloned ? "" : voiceLang}
           </div>
           <button onClick={() => setUserOpen(!userOpen)} style={{
             width:"34px", height:"34px", borderRadius:"50%", border:"none",
@@ -401,16 +454,81 @@ export default function StudioPage() {
             <div className="card-header">
               <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
                 <div style={{ width:"7px", height:"7px", borderRadius:"50%", background:"#c8f060", animation:"pulse 2.5s ease infinite" }}/>
-                <span style={{ fontSize:"11px", fontWeight:500, color:"rgba(255,255,255,0.4)", letterSpacing:".07em" }}>TEXT INPUT</span>
+                <span style={{ fontSize:"11px", fontWeight:500, color:"rgba(255,255,255,0.4)", letterSpacing:".07em" }}>{scriptMode ? "SCRIPT AI" : "TEXT INPUT"}</span>
               </div>
-              <span style={{ fontSize:"12px", color: charCount > 4500 ? "#fb923c" : "rgba(255,255,255,0.2)", fontFamily:"var(--font-inter), 'Inter', sans-serif" }}>
-                {charCount.toLocaleString()} / 5,000
-              </span>
+              <div style={{ display:"flex", alignItems:"center", gap:"10px" }}>
+                {scriptMode && <span style={{ fontSize:"12px", color:"rgba(167,139,250,0.5)", fontFamily:"var(--font-inter), 'Inter', sans-serif" }}>({duration})</span>}
+                <span style={{ fontSize:"12px", color: charCount > 4500 ? "#fb923c" : "rgba(255,255,255,0.2)", fontFamily:"var(--font-inter), 'Inter', sans-serif" }}>
+                  {charCount.toLocaleString()} / 5,000
+                </span>
+              </div>
             </div>
+
+            {/* Script AI mode controls */}
+            {scriptMode && (
+              <div style={{ padding:"16px 18px 0" }}>
+                <div style={{ display:"flex", flexDirection:"row", gap:"8px", flexWrap:"wrap" }}>
+                  <input
+                    value={topic} onChange={e => setTopic(e.target.value)} maxLength={500}
+                    placeholder="Enter your topic… e.g. 'healthy food tips'"
+                    style={{
+                      flex:1, minWidth:"160px", padding:"10px 14px",
+                      borderRadius:"12px", border:"1px solid rgba(255,255,255,0.1)",
+                      background:"rgba(255,255,255,0.03)", color:"#e8e4de",
+                      fontSize:"14px", fontFamily:"var(--font-inter), 'Inter', sans-serif",
+                    }}
+                  />
+                  <select value={scriptLang} onChange={e => setScriptLang(e.target.value)}
+                    style={{
+                      padding:"10px 12px", borderRadius:"12px",
+                      border:"1px solid rgba(255,255,255,0.1)",
+                      background:"rgba(255,255,255,0.03)", color:"#e8e4de",
+                      fontSize:"14px", fontFamily:"var(--font-inter), 'Inter', sans-serif",
+                      cursor:"pointer",
+                    }}>
+                    {LANGUAGES.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
+                  </select>
+                  <div style={{ display:"flex", gap:"4px" }}>
+                    {DURATIONS.map(d => (
+                      <button key={d} onClick={() => setDuration(d)} style={{
+                        padding:"8px 12px", borderRadius:"10px",
+                        border:`1px solid ${duration===d ? "rgba(167,139,250,0.5)" : "rgba(255,255,255,0.08)"}`,
+                        background: duration===d ? "rgba(167,139,250,0.1)" : "transparent",
+                        color: duration===d ? "#a78bfa" : "rgba(255,255,255,0.4)",
+                        fontSize:"12px", fontWeight:600,
+                        fontFamily:"var(--font-inter), 'Inter', sans-serif",
+                        cursor:"pointer",
+                      }}>
+                        {d}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <button onClick={generateScript} disabled={!topic.trim() || genScriptLoading} style={{
+                  marginTop:"12px", padding:"10px 24px", borderRadius:"12px",
+                  border:"none", cursor: topic.trim() && !genScriptLoading ? "pointer" : "not-allowed",
+                  background: topic.trim() && !genScriptLoading
+                    ? "linear-gradient(135deg,#a78bfa,#7c3aed)"
+                    : "rgba(167,139,250,0.2)",
+                  color: "#fff", fontSize:"14px", fontWeight:600,
+                  fontFamily:"'Space Grotesk',var(--font-space-grotesk),sans-serif",
+                  display:"flex", alignItems:"center", gap:"8px",
+                }}>
+                  {genScriptLoading ? (
+                    <>
+                      <div style={{ width:"16px", height:"16px", borderRadius:"50%", border:"2px solid rgba(255,255,255,0.25)", borderTop:"2px solid #fff", animation:"spin .7s linear infinite" }}/>
+                      Generating…
+                    </>
+                  ) : (
+                    <>✦ Generate Script</>
+                  )}
+                </button>
+              </div>
+            )}
 
             <textarea
               value={text} onChange={e => setText(e.target.value)} maxLength={5000}
-              placeholder="Type or paste your text here…"
+              placeholder={scriptMode ? "Your script will appear here…" : "Type or paste your text here…"}
               style={{
                 width:"100%", minHeight:"clamp(130px,20vh,200px)",
                 background:"transparent", border:"none",
@@ -429,14 +547,32 @@ export default function StudioPage() {
               }}/>
             </div>
 
-            {/* Sample chips */}
-            <div style={{ padding:"0 16px 16px", display:"flex", gap:"6px", overflowX:"auto", scrollbarWidth:"none" }}>
-              {Object.keys(SAMPLES).map(key => (
-                <button key={key} className={`chip ${text===SAMPLES[key]?"active":""}`}
-                  onClick={() => setText(SAMPLES[key])}>
-                  {key}
-                </button>
-              ))}
+            {/* Sample chips — only show in normal mode */}
+            {!scriptMode && (
+              <div style={{ padding:"0 16px 16px", display:"flex", gap:"6px", overflowX:"auto", scrollbarWidth:"none" }}>
+                {Object.keys(SAMPLES).map(key => (
+                  <button key={key} className={`chip ${text===SAMPLES[key]?"active":""}`}
+                    onClick={() => setText(SAMPLES[key])}>
+                    {key}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Script AI toggle — at the bottom of the card */}
+            <div style={{ padding:"0 18px 16px", display:"flex", alignItems:"center", gap:"10px" }}>
+              <button onClick={() => setScriptMode(!scriptMode)} style={{
+                padding:"6px 14px", borderRadius:"100px",
+                border:`1px solid ${scriptMode ? "rgba(167,139,250,0.4)" : "rgba(255,255,255,0.08)"}`,
+                background: scriptMode ? "rgba(167,139,250,0.08)" : "transparent",
+                color: scriptMode ? "#a78bfa" : "rgba(255,255,255,0.3)",
+                fontSize:"11px", fontWeight:500,
+                fontFamily:"var(--font-inter), 'Inter', sans-serif",
+                cursor:"pointer", transition:"all .15s",
+              }}>
+                Script AI — {scriptMode ? "ON" : "OFF"}
+              </button>
+              {scriptMode && <span style={{ fontSize:"11px", color:"rgba(167,139,250,0.35)", fontFamily:"var(--font-inter), 'Inter', sans-serif" }}>Generate scripts for shorts &amp; reels</span>}
             </div>
           </div>
 
@@ -459,6 +595,23 @@ export default function StudioPage() {
                     <div style={{ fontSize:"11px", color:"rgba(255,255,255,0.25)", marginTop:"1px" }}>{v.emoji} {v.lang}</div>
                   </div>
                   {voiceId===v.id && <div style={{ width:"6px", height:"6px", borderRadius:"50%", background:VC[v.id], marginLeft:"auto", flexShrink:0 }}/>}
+                </button>
+              ))}
+              {clonedVoices.filter(v => v.status === "ready").map(v => (
+                <button key={v.id} className="voice-pill"
+                  onClick={() => setVoiceId(`cloned-${v.id}`)}
+                  style={{
+                    borderColor: voiceId===`cloned-${v.id}` ? "#a78bfa60" : undefined,
+                    background:  voiceId===`cloned-${v.id}` ? "#a78bfa12" : undefined,
+                  }}>
+                  <div style={{ width:"36px", height:"36px", borderRadius:"50%", flexShrink:0, background:"#a78bfa18", border:"1px solid #a78bfa35", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"13px", fontWeight:700, color:"#a78bfa", fontFamily:"'Space Grotesk',var(--font-space-grotesk),sans-serif" }}>
+
+                  </div>
+                  <div style={{ textAlign:"left" }}>
+                    <div style={{ fontSize:"11px", fontWeight:600, color: voiceId===`cloned-${v.id}`?"#e8e4de":"rgba(255,255,255,0.55)", fontFamily:"var(--font-inter), 'Inter', sans-serif" }}>{v.name}</div>
+                    <div style={{ fontSize:"9px", color:"#a78bfa", marginTop:"1px" }}>Custom</div>
+                  </div>
+                  {voiceId===`cloned-${v.id}` && <div style={{ width:"6px", height:"6px", borderRadius:"50%", background:"#a78bfa", marginLeft:"auto", flexShrink:0 }}/>}
                 </button>
               ))}
             </div>
@@ -520,7 +673,7 @@ export default function StudioPage() {
                 <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
                   <div style={{ width:"8px", height:"8px", borderRadius:"50%", background:color, animation: isPlaying?"pulse 1.2s ease infinite":"none" }}/>
                   <span style={{ fontSize:"11px", fontWeight:500, color:"rgba(255,255,255,0.4)", letterSpacing:".07em" }}>
-                    OUTPUT · {voice.name.toUpperCase()} · {voice.lang}
+                    OUTPUT · {voiceName.toUpperCase()} · {voiceLang}
                   </span>
                 </div>
                 <a href={audioUrl} download="twelvelab.mp3" style={{ fontSize:"12px", padding:"5px 14px", borderRadius:"100px", border:`1px solid ${color}30`, color:color, textDecoration:"none", background:`${color}08`, fontFamily:"var(--font-inter), 'Inter', sans-serif", whiteSpace:"nowrap" }}>
@@ -562,7 +715,7 @@ export default function StudioPage() {
           <div className="card fu d1" style={{ borderRadius:"20px" }}>
             <div className="card-header">
               <span style={{ fontSize:"11px", fontWeight:500, color:"rgba(255,255,255,0.4)", letterSpacing:".07em" }}>VOICE</span>
-              <span style={{ fontSize:"11px", color:"rgba(255,255,255,0.2)" }}>{VOICES.length} available</span>
+              <span style={{ fontSize:"11px", color:"rgba(255,255,255,0.2)" }}>{VOICES.length + clonedVoices.filter(v=>v.status==="ready").length} available</span>
             </div>
             <div style={{ padding:"6px" }}>
               {VOICES.map(v => (
@@ -587,6 +740,21 @@ export default function StudioPage() {
                     <div style={{ fontSize:"11px", color:"rgba(255,255,255,0.25)", marginTop:"1px" }}>{v.emoji} {v.gender} · {v.lang}</div>
                   </div>
                   {voiceId===v.id && <div style={{ width:"6px", height:"6px", borderRadius:"50%", background:VC[v.id], flexShrink:0 }}/>}
+                </button>
+              ))}
+              {clonedVoices.filter(v => v.status === "ready").map(v => (
+                <button key={`cv-${v.id}`} onClick={() => setVoiceId(`cloned-${v.id}`)}
+                  style={{ width:"100%", display:"flex", alignItems:"center", gap:"10px", padding:"9px 10px", borderRadius:"12px", border:`1px solid ${voiceId===`cloned-${v.id}`?"#a78bfa50":"transparent"}`, background: voiceId===`cloned-${v.id}`?"#a78bfa0e":"transparent", cursor:"pointer", marginBottom:"2px", transition:"all .15s", fontFamily:"var(--font-inter), 'Inter', sans-serif" }}
+                  onMouseEnter={e => { if(voiceId!==`cloned-${v.id}`){ const el=e.currentTarget as HTMLElement; el.style.background="rgba(255,255,255,0.04)"; el.style.borderColor="rgba(255,255,255,0.08)"; } }}
+                  onMouseLeave={e => { if(voiceId!==`cloned-${v.id}`){ const el=e.currentTarget as HTMLElement; el.style.background="transparent"; el.style.borderColor="transparent"; } }}>
+                  <div style={{ width:"32px", height:"32px", borderRadius:"50%", flexShrink:0, background:"#a78bfa18", border:"1px solid #a78bfa35", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"11px", fontWeight:700, color:"#a78bfa", fontFamily:"'Space Grotesk',var(--font-space-grotesk),sans-serif" }}>
+
+                  </div>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:"13px", fontWeight:500, color: voiceId===`cloned-${v.id}`?"#e8e4de":"rgba(255,255,255,0.6)" }}>{v.name}</div>
+                    <div style={{ fontSize:"10px", color:"#a78bfa", marginTop:"1px" }}>Custom voice</div>
+                  </div>
+                  {voiceId===`cloned-${v.id}` && <div style={{ width:"6px", height:"6px", borderRadius:"50%", background:"#a78bfa", flexShrink:0 }}/>}
                 </button>
               ))}
             </div>
