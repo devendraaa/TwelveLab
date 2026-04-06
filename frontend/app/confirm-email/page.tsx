@@ -1,8 +1,7 @@
 "use client";
-export const dynamic = "force-dynamic";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 export default function ConfirmEmailPage() {
   const [status, setStatus]       = useState<"checking" | "success" | "error">("checking");
@@ -11,36 +10,31 @@ export default function ConfirmEmailPage() {
   const [resending, setResending] = useState(false);
   const [sent, setSent]           = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
     if (!supabase) { setError("Supabase not configured"); setStatus("error"); return; }
 
     async function verify() {
-      if (!supabase) { setError("Supabase not configured"); setStatus("error"); return; }
-      const { data, error } = await supabase.auth.getSession();
+      if (!supabase) return;
+      const { data } = await supabase.auth.getSession();
 
-      if (error || !data.session) {
-        // Check if there's an error hash from Supabase redirect
-        const next = searchParams.get("next") || "/studio";
-        // If no session, the token may be invalid or expired
-        setError("Invalid or expired link. Please sign up again or request a new confirmation email.");
-        setStatus("error");
+      if (data.session?.user?.email_confirmed_at) {
+        router.push("/studio");
         return;
       }
 
-      // Session exists and user is verified
-      router.push(searchParams.get("next") || "/studio");
+      setError("Invalid or expired link. Please sign up again or request a new confirmation email.");
+      setStatus("error");
     }
 
     verify();
-  }, [router, searchParams]);
+  }, [router]);
 
   async function handleResend() {
-    if (!email) return;
+    if (!email || !supabase) return;
     setResending(true);
     setError("");
-    const { error } = await supabase!.auth.resend({
+    const { error } = await supabase.auth.resend({
       type: "signup",
       email,
       options: { emailRedirectTo: `${window.location.origin}/confirm-email` },
@@ -86,7 +80,6 @@ export default function ConfirmEmailPage() {
     );
   }
 
-  // error state - let user request a new confirmation email
   return (
     <main className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
