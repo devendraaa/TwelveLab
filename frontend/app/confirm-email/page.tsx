@@ -16,6 +16,7 @@ export default function ConfirmEmailPage() {
     if (!supabase) { setError("Supabase not configured"); setStatus("error"); return; }
 
     async function verify() {
+      if (!supabase) { setError("Supabase not configured"); setStatus("error"); return; }
       const { data, error } = await supabase.auth.getSession();
 
       if (error || !data.session) {
