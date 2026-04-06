@@ -188,6 +188,7 @@ export default function StudioPage() {
         @keyframes borderPulse { 0%,100%{border-color:rgba(200,240,96,0.2)} 50%{border-color:rgba(200,240,96,0.5)} }
 
         .fu  { animation: fadeUp .45s ease both; }
+        .d0  { animation-delay:0s; }
         .d1  { animation-delay:.06s; }
         .d2  { animation-delay:.12s; }
         .d3  { animation-delay:.18s; }
@@ -444,96 +445,153 @@ export default function StudioPage() {
         {/* LEFT COLUMN */}
         <div className="left-col">
 
-          {/* Page title */}
-          <div className="fu" style={{ paddingBottom:"4px" }}>
-            <h1 style={{ fontFamily:"'Space Grotesk',var(--font-space-grotesk),sans-serif", fontSize:"clamp(22px,6vw,28px)", fontWeight:800, letterSpacing:"-0.5px", lineHeight:1.1 }}>
-              Text to Speech
-            </h1>
-            <p style={{ fontSize:"13px", color:"rgba(255,255,255,0.32)", marginTop:"5px" }}>
-              Convert any text to lifelike audio instantly
-            </p>
+          {/* ── Script AI — hero banner (first thing user sees) ── */}
+          <div className="card fu d0" style={{ position:"relative", overflow:"hidden" }}>
+            <div style={{ position:"absolute", inset:0, background:"linear-gradient(135deg,rgba(167,139,250,0.06) 0%,rgba(124,58,237,0.03) 50%,rgba(167,139,250,0.06) 100%)" }} />
+            <div style={{ position:"absolute", top:"-30px", right:"-30px", width:"120px", height:"120px", borderRadius:"50%", background:"radial-gradient(circle,rgba(167,139,250,0.12),transparent 70%)" }} />
+            <div style={{ position:"relative", display:"flex", alignItems:"center", justifyContent:"space-between", gap:"16px", padding:"18px 22px", flexWrap:"wrap" }}>
+              <div>
+                <div style={{ display:"flex", alignItems:"center", gap:"10px", marginBottom:"4px" }}>
+                  <div style={{ width:"32px", height:"32px", borderRadius:"10px", background:"linear-gradient(135deg,#a78bfa,#7c3aed)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.8 4L14 5.5l-3 3 .7 4.3L8 11l-3.7 1.8.7-4.3-3-3L6.2 5 8 1Z" fill="#fff" opacity=".9"/></svg>
+                  </div>
+                  <div style={{ fontFamily:"'Space Grotesk',var(--font-space-grotesk),sans-serif", fontSize:"17px", fontWeight:700, color:"#e8e4de", letterSpacing:"-0.3px" }}>
+                    Script AI
+                  </div>
+                  <span style={{ fontSize:"10px", fontWeight:600, padding:"2px 8px", borderRadius:"100px", background:"rgba(167,139,250,0.2)", color:"#a78bfa", letterSpacing:".08em", fontFamily:"var(--font-inter), 'Inter', sans-serif" }}>NEW</span>
+                </div>
+                <div style={{ fontSize:"13px", color:"rgba(255,255,255,0.4)", lineHeight:"1.4" }}>
+                  Enter a topic → AI writes your script → One-click speech
+                </div>
+              </div>
+              <button
+                onClick={() => setScriptMode(!scriptMode)}
+                style={{
+                  flexShrink:0,
+                  padding:"10px 24px",
+                  borderRadius:"14px",
+                  border:"none",
+                  cursor:"pointer",
+                  background: scriptMode
+                    ? "linear-gradient(135deg,#a78bfa,#7c3aed)"
+                    : "rgba(167,139,250,0.08)",
+                  color: scriptMode ? "#fff" : "#a78bfa",
+                  fontSize:"14px",
+                  fontWeight:700,
+                  fontFamily:"'Space Grotesk',var(--font-space-grotesk),sans-serif",
+                  transition:"all .2s",
+                  boxShadow: scriptMode ? "0 8px 24px rgba(167,139,250,0.35)" : "none",
+                  letterSpacing:"-0.02em",
+                  whiteSpace:"nowrap",
+                }}
+              >
+                {scriptMode ? "Script ON" : "Use Script AI"}
+              </button>
+            </div>
+          </div>
+
+          {/* Script AI expanded controls */}
+          {scriptMode && (
+            <div className="card fu d1" style={{ position:"relative", overflow:"hidden", borderColor:"rgba(167,139,250,0.15)" }}>
+              <div style={{ position:"absolute", top:"-1px", left:0, right:0, height:"2px", background:"linear-gradient(90deg,transparent,#a78bfa,transparent)" }} />
+              <div className="card-header" style={{ borderBottomColor:"rgba(167,139,250,0.08)" }}>
+                <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
+                  <div style={{ width:"7px", height:"7px", borderRadius:"50%", background:"#a78bfa", animation:"pulse 2s ease infinite" }}/>
+                  <span className="script-label" style={{ fontSize:"11px", fontWeight:600, color:"#a78bfa", letterSpacing:".07em" }}>SCRIPT GENERATOR</span>
+                </div>
+              </div>
+              <div style={{ padding:"16px 18px" }}>
+                <input
+                  value={topic} onChange={e => setTopic(e.target.value)} maxLength={500}
+                  placeholder="Enter your topic… e.g. 'healthy food tips'"
+                  style={{
+                    width:"100%", padding:"12px 14px", marginBottom:"12px",
+                    borderRadius:"12px", border:"1px solid rgba(255,255,255,0.1)",
+                    background:"rgba(255,255,255,0.03)", color:"#e8e4de",
+                    fontSize:"15px", fontFamily:"var(--font-inter), 'Inter', sans-serif",
+                    transition:"border-color .2s",
+                    boxSizing:"border-box",
+                  }}
+                  onFocus={e => (e.target as HTMLElement).style.borderColor="rgba(167,139,250,0.4)"}
+                  onBlur={e => (e.target as HTMLElement).style.borderColor="rgba(255,255,255,0.1)"}
+                />
+                <div style={{ display:"flex", gap:"8px", alignItems:"center", flexWrap:"wrap" }}>
+                  <select value={scriptLang} onChange={e => setScriptLang(e.target.value)}
+                    style={{
+                      padding:"10px 12px", borderRadius:"10px",
+                      border:"1px solid rgba(255,255,255,0.1)",
+                      background:"rgba(255,255,255,0.03)", color:"#e8e4de",
+                      fontSize:"13px", fontFamily:"var(--font-inter), 'Inter', sans-serif",
+                      cursor:"pointer",
+                    }}>
+                    {LANGUAGES.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
+                  </select>
+                  {DURATIONS.map(d => (
+                    <button key={d} onClick={() => setDuration(d)} style={{
+                      padding:"7px 12px", borderRadius:"10px",
+                      border:`1px solid ${duration===d ? "rgba(167,139,250,0.5)" : "rgba(255,255,255,0.08)"}`,
+                      background: duration===d ? "rgba(167,139,250,0.1)" : "transparent",
+                      color: duration===d ? "#a78bfa" : "rgba(255,255,255,0.4)",
+                      fontSize:"12px", fontWeight:600,
+                      fontFamily:"var(--font-inter), 'Inter', sans-serif",
+                      cursor:"pointer",
+                    }}>
+                      {d}
+                    </button>
+                  ))}
+                  <button onClick={generateScript} disabled={!topic.trim() || genScriptLoading} style={{
+                    padding:"10px 20px", borderRadius:"10px",
+                    border:"none", cursor: topic.trim() && !genScriptLoading ? "pointer" : "not-allowed",
+                    background: topic.trim() && !genScriptLoading
+                      ? "linear-gradient(135deg,#a78bfa,#7c3aed)"
+                      : "rgba(167,139,250,0.2)",
+                    color: "#fff", fontSize:"13px", fontWeight:600,
+                    fontFamily:"'Space Grotesk',var(--font-space-grotesk),sans-serif",
+                    display:"flex", alignItems:"center", gap:"6px", marginLeft:"auto",
+                  }}>
+                    {genScriptLoading ? (
+                      <>
+                        <div style={{ width:"14px", height:"14px", borderRadius:"50%", border:"2px solid rgba(255,255,255,0.25)", borderTop:"2px solid #fff", animation:"spin .7s linear infinite" }}/>
+                        Generating…
+                      </>
+                    ) : (
+                      <>✦ Generate Script</>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Page title + Text editor card */}
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:"8px", flexWrap:"wrap" }}>
+            <div>
+              <h1 style={{ fontFamily:"'Space Grotesk',var(--font-space-grotesk),sans-serif", fontSize:"clamp(20px,5vw,24px)", fontWeight:800, letterSpacing:"-0.5px", lineHeight:1.1 }}>
+                {scriptMode ? "Edit Script" : "Text to Speech"}
+              </h1>
+              <p style={{ fontSize:"12px", color:"rgba(255,255,255,0.3)", marginTop:"2px" }}>
+                {scriptMode ? "Refine your AI-generated script or paste text" : "Convert any text to lifelike audio instantly"}
+              </p>
+            </div>
           </div>
 
           {/* Text editor card */}
-          <div className="card fu d1">
+          <div className={`card fu ${scriptMode ? "d2" : "d1"}`}>
             <div className="card-header">
               <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
                 <div style={{ width:"7px", height:"7px", borderRadius:"50%", background:"#c8f060", animation:"pulse 2.5s ease infinite" }}/>
-                <span style={{ fontSize:"11px", fontWeight:500, color:"rgba(255,255,255,0.4)", letterSpacing:".07em" }}>{scriptMode ? "SCRIPT AI" : "TEXT INPUT"}</span>
+                <span style={{ fontSize:"11px", fontWeight:500, color:"rgba(255,255,255,0.4)", letterSpacing:".07em" }}>{scriptMode ? "SCRIPT EDITOR" : "TEXT INPUT"}</span>
               </div>
               <div style={{ display:"flex", alignItems:"center", gap:"10px" }}>
-                {scriptMode && <span style={{ fontSize:"12px", color:"rgba(167,139,250,0.5)", fontFamily:"var(--font-inter), 'Inter', sans-serif" }}>({duration})</span>}
                 <span style={{ fontSize:"12px", color: charCount > 4500 ? "#fb923c" : "rgba(255,255,255,0.2)", fontFamily:"var(--font-inter), 'Inter', sans-serif" }}>
                   {charCount.toLocaleString()} / 5,000
                 </span>
               </div>
             </div>
 
-            {/* Script AI mode controls */}
-            {scriptMode && (
-              <div style={{ padding:"16px 18px 0" }}>
-                <div style={{ display:"flex", flexDirection:"row", gap:"8px", flexWrap:"wrap" }}>
-                  <input
-                    value={topic} onChange={e => setTopic(e.target.value)} maxLength={500}
-                    placeholder="Enter your topic… e.g. 'healthy food tips'"
-                    style={{
-                      flex:1, minWidth:"160px", padding:"10px 14px",
-                      borderRadius:"12px", border:"1px solid rgba(255,255,255,0.1)",
-                      background:"rgba(255,255,255,0.03)", color:"#e8e4de",
-                      fontSize:"14px", fontFamily:"var(--font-inter), 'Inter', sans-serif",
-                    }}
-                  />
-                  <select value={scriptLang} onChange={e => setScriptLang(e.target.value)}
-                    style={{
-                      padding:"10px 12px", borderRadius:"12px",
-                      border:"1px solid rgba(255,255,255,0.1)",
-                      background:"rgba(255,255,255,0.03)", color:"#e8e4de",
-                      fontSize:"14px", fontFamily:"var(--font-inter), 'Inter', sans-serif",
-                      cursor:"pointer",
-                    }}>
-                    {LANGUAGES.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
-                  </select>
-                  <div style={{ display:"flex", gap:"4px" }}>
-                    {DURATIONS.map(d => (
-                      <button key={d} onClick={() => setDuration(d)} style={{
-                        padding:"8px 12px", borderRadius:"10px",
-                        border:`1px solid ${duration===d ? "rgba(167,139,250,0.5)" : "rgba(255,255,255,0.08)"}`,
-                        background: duration===d ? "rgba(167,139,250,0.1)" : "transparent",
-                        color: duration===d ? "#a78bfa" : "rgba(255,255,255,0.4)",
-                        fontSize:"12px", fontWeight:600,
-                        fontFamily:"var(--font-inter), 'Inter', sans-serif",
-                        cursor:"pointer",
-                      }}>
-                        {d}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <button onClick={generateScript} disabled={!topic.trim() || genScriptLoading} style={{
-                  marginTop:"12px", padding:"10px 24px", borderRadius:"12px",
-                  border:"none", cursor: topic.trim() && !genScriptLoading ? "pointer" : "not-allowed",
-                  background: topic.trim() && !genScriptLoading
-                    ? "linear-gradient(135deg,#a78bfa,#7c3aed)"
-                    : "rgba(167,139,250,0.2)",
-                  color: "#fff", fontSize:"14px", fontWeight:600,
-                  fontFamily:"'Space Grotesk',var(--font-space-grotesk),sans-serif",
-                  display:"flex", alignItems:"center", gap:"8px",
-                }}>
-                  {genScriptLoading ? (
-                    <>
-                      <div style={{ width:"16px", height:"16px", borderRadius:"50%", border:"2px solid rgba(255,255,255,0.25)", borderTop:"2px solid #fff", animation:"spin .7s linear infinite" }}/>
-                      Generating…
-                    </>
-                  ) : (
-                    <>✦ Generate Script</>
-                  )}
-                </button>
-              </div>
-            )}
-
             <textarea
               value={text} onChange={e => setText(e.target.value)} maxLength={5000}
-              placeholder={scriptMode ? "Your script will appear here…" : "Type or paste your text here…"}
+              placeholder={scriptMode ? "Your script is ready…" : "Type or paste your text here…"}
               style={{
                 width:"100%", minHeight:"clamp(130px,20vh,200px)",
                 background:"transparent", border:"none",
@@ -563,22 +621,6 @@ export default function StudioPage() {
                 ))}
               </div>
             )}
-
-            {/* Script AI toggle — at the bottom of the card */}
-            <div style={{ padding:"0 18px 16px", display:"flex", alignItems:"center", gap:"10px" }}>
-              <button onClick={() => setScriptMode(!scriptMode)} style={{
-                padding:"6px 14px", borderRadius:"100px",
-                border:`1px solid ${scriptMode ? "rgba(167,139,250,0.4)" : "rgba(255,255,255,0.08)"}`,
-                background: scriptMode ? "rgba(167,139,250,0.08)" : "transparent",
-                color: scriptMode ? "#a78bfa" : "rgba(255,255,255,0.3)",
-                fontSize:"11px", fontWeight:500,
-                fontFamily:"var(--font-inter), 'Inter', sans-serif",
-                cursor:"pointer", transition:"all .15s",
-              }}>
-                Script AI — {scriptMode ? "ON" : "OFF"}
-              </button>
-              {scriptMode && <span style={{ fontSize:"11px", color:"rgba(167,139,250,0.35)", fontFamily:"var(--font-inter), 'Inter', sans-serif" }}>Generate scripts for shorts &amp; reels</span>}
-            </div>
           </div>
 
           {/* Voice row — mobile only */}
