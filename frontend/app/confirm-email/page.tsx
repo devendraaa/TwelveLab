@@ -16,10 +16,31 @@ export default function ConfirmEmailPage() {
 
     async function verify() {
       if (!supabase) return;
+
+      // Supabase redirects here with access_token + refresh_token in the URL hash
+      const hashParams = new URLSearchParams(window.location.hash.slice(1));
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
+
+      if (accessToken && refreshToken) {
+        // Exchange URL params for a real session
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        if (error) {
+          setError(error.message);
+          setStatus("error");
+          return;
+        }
+      }
+
+      // Now check for an active session
       const { data } = await supabase.auth.getSession();
 
       if (data.session?.user?.email_confirmed_at) {
-        router.push("/studio");
+        setStatus("success");
+        setTimeout(() => router.push("/studio"), 1500);
         return;
       }
 
