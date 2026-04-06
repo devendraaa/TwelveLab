@@ -41,10 +41,24 @@ export default function StudioPage() {
   const [duration, setDuration] = useState("30s");
   const [genScriptLoading, setGenScriptLoading] = useState(false);
   const [isCSR, setIsCSR] = useState(false);
+  // Speech-to-Text
+  const [isListening,  setIsListening]      = useState(false);
+  const [interim,      setInterim]          = useState("");
+  const [speechErr,    setSpeechErr]        = useState("");
+  const recognitionRef = useRef<any>(null);
+  const fileInputRef   = useRef<HTMLInputElement>(null);
+
   const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
     setIsCSR(true);
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.onend = null;
+        recognitionRef.current.stop();
+        recognitionRef.current = null;
+      }
+    };
   }, []);
 
   const voiceParam = isCSR ? new URLSearchParams(window.location.search).get("voice") : null;
@@ -153,6 +167,117 @@ export default function StudioPage() {
     }
   }
 
+  // ── Speech-to-Text ──
+  function getSpeechLang(): string {
+    const map: Record<string, string> = { EN: "en-US", HI: "hi-IN", MR: "mr-IN", ES: "es-ES", DE: "de-DE", FR: "fr-FR" };
+    return map[scriptLang] || "en-US";
+  }
+
+  function startListening() {
+    setSpeechErr("");
+    setInterim("");
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) { setSpeechErr("Speech recognition not supported. Use Chrome or Safari."); return; }
+    const rec = new SR();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang = getSpeechLang();
+    rec.onresult = (e: any) => {
+      let interim = "";
+      for (let i = 0; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) { setText(prev => prev + (prev && !prev.endsWith(" ") ? " " : "") + t); }
+        else { interim += t; }
+      }
+      setInterim(interim);
+    };
+    rec.onerror = (e: any) => { if (e.error !== "no-speech") setSpeechErr("Speech error: " + e.error); };
+    rec.onend = () => { if (recognitionRef.current) { recognitionRef.current.start(); } };
+    try { rec.start(); recognitionRef.current = rec; setIsListening(true); } catch { setSpeechErr("Could not access microphone"); }
+  }
+
+  function stopListening() {
+    if (recognitionRef.current) { recognitionRef.current.onend = null; recognitionRef.current.stop(); recognitionRef.current = null; }
+    setIsListening(false); setInterim("");
+  }
+
+  function toggleListening() { if (isListening) stopListening(); else startListening(); }
+
+  async function handleAudioUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (e.target.value) e.target.value = "";
+    setSpeechErr("");
+
+    // Check if file supports the speech recognition approach
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) { setSpeechErr("Speech recognition not available. Use Chrome or Edge."); return; }
+
+    // Create object URL and play audio — speech recognition picks it up from device mic
+    const url = URL.createObjectURL(file);
+    const audio = new Audio(url);
+
+    // Start speech recognition to capture the audio being played
+    const rec = new SR();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang = getSpeechLang();
+
+    let finalText = "";
+    let anyResult = false;
+
+    rec.onresult = (ev: any) => {
+      anyResult = true;
+      for (let i = 0; i < ev.results.length; i++) {
+        const t = ev.results[i][0].transcript;
+        if (ev.results[i].isFinal) {
+          finalText += (finalText ? " " : "") + t;
+        }
+      }
+      // Show live transcript as interim
+      let live = "";
+      for (let i = 0; i < ev.results.length; i++) {
+        if (!ev.results[i].isFinal) live += ev.results[i][0].transcript;
+      }
+      setInterim(live);
+    };
+
+    rec.onend = () => {
+      if (finalText) {
+        setText(prev => prev + (prev && prev.trim() ? "\n\n" : "") + finalText);
+      } else if (!anyResult) {
+        setSpeechErr("No speech detected. Try increasing volume or use mic input");
+      }
+      setInterim(""); setIsListening(false);
+      URL.revokeObjectURL(url);
+    };
+
+    rec.onerror = (ev: any) => {
+      if (ev.error !== "no-speech") setSpeechErr("Speech error: " + ev.error);
+    };
+
+    // Play audio — it gets picked up by the device mic during recognition
+    audio.volume = 0.8;
+    try {
+      rec.start();
+      recognitionRef.current = rec;
+      setIsListening(true);
+      await audio.play();
+      audio.onended = () => {
+        setTimeout(() => {
+          if (recognitionRef.current) {
+            recognitionRef.current.onend = null;
+            recognitionRef.current.stop();
+            recognitionRef.current = null;
+          }
+        }, 1000);
+      };
+    } catch (err: any) {
+      setSpeechErr("Could not start recognition");
+      setIsListening(false);
+    }
+  }
+
   if (!mounted) return null;
 
   return (
@@ -186,6 +311,7 @@ export default function StudioPage() {
         @keyframes shimmer  { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
         @keyframes glow     { 0%,100%{box-shadow:0 0 20px rgba(200,240,96,0.15)} 50%{box-shadow:0 0 40px rgba(200,240,96,0.35)} }
         @keyframes borderPulse { 0%,100%{border-color:rgba(200,240,96,0.2)} 50%{border-color:rgba(200,240,96,0.5)} }
+        @keyframes recPulse { 0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.4)} 50%{box-shadow:0 0 0 8px rgba(239,68,68,0)} }
 
         .fu  { animation: fadeUp .45s ease both; }
         .d0  { animation-delay:0s; }
@@ -576,13 +702,53 @@ export default function StudioPage() {
           </div>
 
           {/* Text editor card */}
-          <div className={`card fu ${scriptMode ? "d2" : "d1"}`}>
+          <div className={`card fu ${scriptMode ? "d2" : "d1"}`} style={{ borderColor: isListening ? "rgba(239,68,68,0.3)" : undefined, boxShadow: isListening ? "0 0 0 3px rgba(239,68,68,0.08)" : undefined }}>
             <div className="card-header">
-              <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
-                <div style={{ width:"7px", height:"7px", borderRadius:"50%", background:"#c8f060", animation:"pulse 2.5s ease infinite" }}/>
+              <div style={{ display:"flex", alignItems:"center", gap:"8px", flexWrap:"wrap" }}>
+                <div style={{ width:"7px", height:"7px", borderRadius:"50%", background: isListening ? "#ef4444" : "#c8f060", animation: isListening ? "pulse 1s ease infinite" : "pulse 2.5s ease infinite" }}/>
                 <span style={{ fontSize:"11px", fontWeight:500, color:"rgba(255,255,255,0.4)", letterSpacing:".07em" }}>{scriptMode ? "SCRIPT EDITOR" : "TEXT INPUT"}</span>
+                {isListening && <span style={{ fontSize:"10px", fontWeight:600, padding:"2px 8px", borderRadius:"100px", background:"rgba(239,68,68,0.15)", color:"#ef4444", animation:"recPulse 1.5s ease infinite" }}>Recording</span>}
               </div>
-              <div style={{ display:"flex", alignItems:"center", gap:"10px" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:"6px" }}>
+                {speechErr && <span style={{ fontSize:"11px", color:"#ef4444", marginRight:"4px" }}>{speechErr}</span>}
+                {/* Mic button */}
+                <button
+                  onClick={toggleListening}
+                  title={isListening ? "Stop listening" : "Start voice input"}
+                  style={{
+                    display:"flex", alignItems:"center", justifyContent:"center",
+                    width:"34px", height:"34px", borderRadius:"10px",
+                    border:"none", cursor:"pointer", padding:0,
+                    background: isListening ? "rgba(239,68,68,0.12)" : "rgba(255,255,255,0.05)",
+                    color: isListening ? "#ef4444" : "rgba(255,255,255,0.5)",
+                    transition:"all .15s",
+                    animation: isListening ? "recPulse 1.5s ease infinite" : "none",
+                    flexShrink:0,
+                  }}
+                >
+                  {isListening ? (
+                    <svg width="15" height="15" viewBox="0 0 20 20" fill="none"><rect x="5" y="5" width="10" height="10" rx="2" fill="currentColor"/></svg>
+                  ) : (
+                    <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="5.5" y="1" width="4" height="8" rx="2" fill="currentColor"/><path d="M3.5 7a4 4 0 007.5 0" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><line x1="7.5" y1="12" x2="7.5" y2="14.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M5 14.5h5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
+                  )}
+                </button>
+                {/* Upload audio button */}
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  title="Upload audio file for transcription"
+                  style={{
+                    display:"flex", alignItems:"center", justifyContent:"center",
+                    width:"34px", height:"34px", borderRadius:"10px",
+                    border:"none", cursor:"pointer", padding:0,
+                    background:"rgba(255,255,255,0.05)",
+                    color:"rgba(255,255,255,0.5)",
+                    transition:"all .15s",
+                    flexShrink:0,
+                  }}
+                >
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M14 10v4a1 1 0 01-1 1H3a1 1 0 01-1-1v-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/><polyline points="5.5 5 8 2.5 10.5 5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/><line x1="8" y1="2.5" x2="8" y2="10.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </button>
+                <input ref={fileInputRef} type="file" accept="audio/*" hidden onChange={handleAudioUpload} />
                 <span style={{ fontSize:"12px", color: charCount > 4500 ? "#fb923c" : "rgba(255,255,255,0.2)", fontFamily:"var(--font-inter), 'Inter', sans-serif" }}>
                   {charCount.toLocaleString()} / 5,000
                 </span>
