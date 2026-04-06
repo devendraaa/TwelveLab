@@ -53,7 +53,7 @@ export default function SignupPage() {
       password,
       options: {
         data: { full_name: name },
-        emailRedirectTo: `${window.location.origin}/studio`,
+        emailRedirectTo: `${window.location.origin}/confirm-email`,
       },
     });
 
@@ -64,7 +64,7 @@ export default function SignupPage() {
         const { error: resendError } = await supabase.auth.resend({
           type: "signup",
           email,
-          options: { emailRedirectTo: `${window.location.origin}/studio` },
+          options: { emailRedirectTo: `${window.location.origin}/confirm-email` },
         });
         if (resendError) { setError(resendError.message); return; }
         setSent(true);

@@ -78,7 +78,7 @@ export default function LoginPage() {
           </div>
 
           <div className="text-center mt-6 flex flex-col gap-3 items-center">
-            <Link href="/confirm" className="text-xs text-[#6b6860] hover:text-white transition-colors">
+            <Link href="/forgot-password" className="text-xs text-[#6b6860] hover:text-white transition-colors">
               Forgot your password?
             </Link>
             <Link href="/signup" className="text-xs text-[#6b6860] hover:text-[#c8f060] transition-colors">
