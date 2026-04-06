@@ -28,6 +28,7 @@ export function DesktopSidebar({ user, charUsed, charLimit, genCount, activeRout
 
   const navItems = [
     { label: "Studio", route: "/studio" as const, icon: <ActiveIcon />, active: activeRoute === "studio" },
+    { label: "Clone", route: "/clone" as const, icon: <CloneIcon />, active: activeRoute === "clone" },
     { label: "History", route: "/history" as const, icon: <HistoryIcon />, active: activeRoute === "history" },
   ];
 
@@ -102,6 +103,7 @@ export function MobileDrawer({ user, charUsed, charLimit, activeRoute, onLogout,
 
   const navItems = [
     { label: "Studio", route: "/studio" as const, active: activeRoute === "studio" },
+    { label: "Clone", route: "/clone" as const, active: activeRoute === "clone" },
     { label: "History", route: "/history" as const, active: activeRoute === "history" },
   ];
 
